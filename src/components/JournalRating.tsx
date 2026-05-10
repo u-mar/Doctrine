@@ -178,7 +178,7 @@ function JournalRatingInner({ entrySlug }: JournalRatingProps) {
   }
 
   return (
-    <section className="mt-8 rounded-xl border border-border/70 bg-muted/20 px-4 py-3">
+    <section className="mt-6 rounded-lg border border-border/35 bg-muted/10 px-3 py-3 sm:mt-8 sm:rounded-xl sm:border-border/60 sm:bg-muted/20 sm:px-4">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <span className="text-xs font-medium text-muted-foreground">Rate this piece</span>
         <div className="flex items-center gap-0.5" role="group" aria-label="Star rating">

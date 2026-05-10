@@ -40,7 +40,7 @@ export default async function JournalEntryPage({
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <div className="container mx-auto max-w-3xl px-3 py-16 sm:px-4 sm:py-24">
+      <div className="container mx-auto max-w-3xl px-3 pt-[calc(4rem+env(safe-area-inset-top,0px)+1rem)] pb-16 sm:px-4 sm:pb-24 sm:pt-[calc(4rem+env(safe-area-inset-top,0px)+1.25rem)]">
         <Link
           href="/briefs"
           className="inline-flex items-center text-sm text-muted-foreground transition-colors hover:text-foreground"

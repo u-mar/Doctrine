@@ -3,16 +3,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { useEffect, useState } from "react";
 import ThemeToggle from "./ThemeToggle";
 
 export default function Navbar() {
   const pathname = usePathname();
+  const [mobileOpen, setMobileOpen] = useState(false);
   const navLinks = [
     { href: "/briefs", label: "Briefs" },
     { href: "/ideas", label: "Ideas" },
@@ -20,14 +16,32 @@ export default function Navbar() {
     { href: "/contact", label: "Contact" },
   ] as const;
 
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMobileOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [mobileOpen]);
+
   if (pathname.startsWith("/admin")) {
     return null;
   }
 
   return (
-    <nav className="fixed left-0 right-0 top-0 z-50 border-b border-border/70 bg-background/80 backdrop-blur-md">
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
+    <nav className="fixed left-0 right-0 top-0 z-50 border-b border-border/50 bg-background/90 pt-[env(safe-area-inset-top)] backdrop-blur-md supports-[backdrop-filter]:bg-background/75">
+      <div className="container mx-auto max-w-6xl px-3 sm:px-4">
+        <div className="flex h-16 items-center justify-between">
           <Link href="/" className="flex min-w-0 flex-col leading-tight">
             <span className="truncate text-lg font-bold tracking-tight sm:text-xl md:text-2xl">THE DOCTRINE</span>
             <span className="truncate text-[9px] uppercase tracking-[0.14em] text-muted-foreground sm:text-[10px] sm:tracking-[0.16em]">
@@ -58,28 +72,52 @@ export default function Navbar() {
 
           <div className="flex items-center gap-2 md:hidden">
             <ThemeToggle />
-            <DropdownMenu>
-              <DropdownMenuTrigger className="min-h-10 rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary">
-                Menu
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-44">
-                <DropdownMenuItem asChild>
-                  <Link href="/briefs">Briefs</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/ideas">Ideas</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/about">About</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/contact">Contact</Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <button
+              type="button"
+              aria-expanded={mobileOpen}
+              aria-controls="mobile-site-nav"
+              onClick={() => setMobileOpen((o) => !o)}
+              className="min-h-11 min-w-[4.75rem] rounded-xl border border-border/60 bg-background px-3 py-2 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-muted/80 active:bg-muted"
+            >
+              {mobileOpen ? "Close" : "Menu"}
+            </button>
           </div>
         </div>
       </div>
+
+      {mobileOpen ? (
+        <>
+          <button
+            type="button"
+            aria-label="Close navigation"
+            className="fixed inset-0 z-[55] bg-foreground/20 backdrop-blur-[3px] md:hidden"
+            onClick={() => setMobileOpen(false)}
+          />
+          <div
+            id="mobile-site-nav"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Site navigation"
+            className="fixed left-3 right-3 top-[calc(4rem+env(safe-area-inset-top)+12px)] z-[60] flex max-h-[min(78vh,calc(100dvh-5rem-env(safe-area-inset-bottom)))] flex-col gap-0.5 overflow-y-auto overscroll-contain rounded-2xl border border-border/50 bg-popover p-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-lg ring-1 ring-black/5 md:hidden dark:ring-white/10"
+          >
+            {navLinks.map((link) => {
+              const isActive = pathname === link.href || pathname.startsWith(`${link.href}/`);
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setMobileOpen(false)}
+                  className={`rounded-xl px-4 py-3.5 text-base transition-colors ${
+                    isActive ? "bg-primary/12 font-semibold text-foreground" : "text-foreground/90 hover:bg-muted"
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
+          </div>
+        </>
+      ) : null}
     </nav>
   );
 }

@@ -6,11 +6,18 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { RATING_VISITOR_COOKIE, isValidRatingItemKey, parseRatingItemKeysParam } from "@/lib/content-rating-keys";
 
+export const dynamic = "force-dynamic";
+
 const MAX_RATING = 5;
 const COOKIE_MAX_AGE_SEC = 60 * 60 * 24 * 365 * 2;
 
 async function resolveRaterKey(): Promise<{ raterKey: string; newVisitorId?: string }> {
-  const session = await getServerSession(authOptions);
+  let session = null;
+  try {
+    session = await getServerSession(authOptions);
+  } catch {
+    // Missing NEXTAUTH_SECRET or adapter errors must not break anonymous ratings.
+  }
   const userId = session?.user && "id" in session.user ? String((session.user as { id?: string }).id ?? "") : "";
   if (userId) {
     return { raterKey: `user:${userId}` };

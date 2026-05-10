@@ -27,17 +27,17 @@ export default function ContentDisplay({
 
   return (
     <>
-      <div className="fixed left-0 right-0 top-16 z-40">
+      <div className="fixed left-0 right-0 top-[calc(4rem+env(safe-area-inset-top,0px))] z-40">
         <div className="h-1 w-full bg-border/60">
           <div className="h-full bg-primary transition-[width] duration-150" style={{ width: `${readingProgress}%` }} />
         </div>
       </div>
 
       <article
-        className={`relative mt-6 rounded-2xl border bg-card/85 p-4 shadow-sm sm:mt-8 sm:rounded-3xl sm:p-6 md:p-8 ${
+        className={`relative mt-4 rounded-xl border border-border/50 bg-background/90 p-4 shadow-none ring-1 ring-black/[0.04] backdrop-blur-[2px] sm:mt-8 sm:rounded-3xl sm:border-border sm:bg-card/85 sm:p-6 sm:shadow-sm md:p-8 dark:ring-white/[0.06] ${
           draftWatermark
             ? "overflow-visible border-amber-500/70 ring-2 ring-amber-400/40 dark:border-amber-500/50 dark:ring-amber-500/25"
-            : "overflow-hidden border-border"
+            : "overflow-hidden sm:ring-0"
         }`}
       >
         {draftWatermark && <span className="sr-only">This piece is marked as a draft and may change.</span>}
@@ -95,7 +95,7 @@ export default function ContentDisplay({
       </article>
 
       <div className="mt-6 sm:mt-8">
-        <div className="flex w-full flex-col gap-3 rounded-xl border border-border bg-background/60 px-3 py-3 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4 sm:px-4">
+        <div className="flex w-full flex-col gap-3 rounded-lg border border-border/40 bg-background/50 px-3 py-3 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4 sm:rounded-xl sm:border-border sm:bg-background/60 sm:px-4">
           <p className="text-center text-sm text-muted-foreground sm:text-left">
             Page {safePage + 1} of {totalPages}
           </p>

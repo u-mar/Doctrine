@@ -40,7 +40,7 @@ export default function HomePageClient({
 }) {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/30 text-foreground">
-      <main className="container mx-auto max-w-6xl px-4 pb-12 sm:px-6">
+      <main className="container mx-auto max-w-6xl px-4 pb-12 pt-[calc(4rem+env(safe-area-inset-top,0px)+0.5rem)] sm:px-6 sm:pt-[calc(4rem+env(safe-area-inset-top,0px)+0.75rem)]">
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

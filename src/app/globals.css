@@ -124,10 +124,19 @@
   body {
     @apply bg-background text-foreground;
     background-image:
-      radial-gradient(1200px 600px at -10% -20%, oklch(0.9 0.06 210 / 0.28), transparent 60%),
-      radial-gradient(900px 520px at 110% -10%, oklch(0.92 0.06 140 / 0.24), transparent 55%),
+      radial-gradient(1200px 600px at -10% -20%, oklch(0.9 0.06 210 / 0.18), transparent 60%),
+      radial-gradient(900px 520px at 110% -10%, oklch(0.92 0.06 140 / 0.15), transparent 55%),
       linear-gradient(to bottom, oklch(1 0.004 80), oklch(0.98 0.01 95));
     background-attachment: fixed;
+  }
+
+  @media (max-width: 640px) {
+    body {
+      background-image:
+        radial-gradient(900px 480px at -10% -15%, oklch(0.93 0.05 210 / 0.12), transparent 58%),
+        radial-gradient(700px 420px at 110% -8%, oklch(0.96 0.04 140 / 0.1), transparent 52%),
+        linear-gradient(to bottom, oklch(1 0.003 80), oklch(0.99 0.008 95));
+    }
   }
 
   .dark body {
