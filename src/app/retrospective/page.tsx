@@ -101,15 +101,15 @@ export default function RetrospectivePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/30 text-foreground">
-      <div className="container mx-auto px-4 py-16 sm:py-24">
+      <div className="container mx-auto px-4 py-12 sm:px-6 sm:py-24">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
           className="mx-auto mb-12 max-w-3xl text-center"
         >
-          <h1 className="text-5xl font-bold tracking-tight sm:text-6xl">Retrospective</h1>
-          <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
+          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">Retrospective</h1>
+          <p className="mt-4 text-base leading-relaxed text-muted-foreground sm:text-lg">
             Commentary on past events, their impact, and what could have been done differently.
           </p>
         </motion.div>

@@ -2,52 +2,64 @@
 
 import { motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
-import EngagementPanel from "@/components/EngagementPanel";
-import { quickTakes, quickTakeTopics } from "@/lib/quick-takes";
+import type { QuickTake } from "@/lib/quick-takes";
 
 type SortMode = "newest" | "top";
 
 export default function QuickTakesPage() {
+  const [takes, setTakes] = useState<QuickTake[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedTopic, setSelectedTopic] = useState<(typeof quickTakeTopics)[number]>("All");
+  const [selectedTopic, setSelectedTopic] = useState("All");
   const [sortMode, setSortMode] = useState<SortMode>("newest");
   const [engagementScores, setEngagementScores] = useState<Record<number, number>>({});
 
+  const topicOptions = useMemo(() => {
+    const unique = new Set(takes.map((take) => take.topic));
+    return ["All", ...Array.from(unique).sort()];
+  }, [takes]);
+
+  const activeTopic = topicOptions.includes(selectedTopic) ? selectedTopic : "All";
+
   useEffect(() => {
-    const refreshEngagementScores = () => {
-      const nextScores: Record<number, number> = {};
+    const load = async () => {
+      const [takesResponse, engagementResponse] = await Promise.all([
+        fetch("/api/content/quick-takes"),
+        fetch("/api/content/engagement"),
+      ]);
+      if (!takesResponse.ok) {
+        return;
+      }
+      const nextTakes = (await takesResponse.json()) as QuickTake[];
+      setTakes(nextTakes);
 
-      for (const take of quickTakes) {
-        const raw = window.localStorage.getItem(`engagement:quick-take:${take.id}`);
-
-        if (!raw) {
-          nextScores[take.id] = 0;
-          continue;
-        }
-
-        try {
-          const parsed = JSON.parse(raw) as { vote?: string };
-          const voteBonus = parsed.vote === "agree" ? 2 : parsed.vote === "disagree" ? 1 : 0;
-          nextScores[take.id] = voteBonus;
-        } catch {
-          nextScores[take.id] = 0;
-        }
+      let engagementRows: { itemKey: string; vote: "agree" | "disagree" | null }[] = [];
+      if (engagementResponse.ok) {
+        engagementRows = (await engagementResponse.json()) as {
+          itemKey: string;
+          vote: "agree" | "disagree" | null;
+        }[];
       }
 
+      const nextScores: Record<number, number> = {};
+      for (const take of nextTakes) {
+        const row = engagementRows.find((item) => item.itemKey === `quick-take:${take.id}`);
+        const vote = row?.vote;
+        nextScores[take.id] = vote === "agree" ? 2 : vote === "disagree" ? 1 : 0;
+      }
       setEngagementScores(nextScores);
     };
 
-    refreshEngagementScores();
-    window.addEventListener("focus", refreshEngagementScores);
-
+    void load();
+    const onFocus = () => void load();
+    window.addEventListener("focus", onFocus);
     return () => {
-      window.removeEventListener("focus", refreshEngagementScores);
+      window.removeEventListener("focus", onFocus);
     };
   }, []);
 
-  const filteredTakes = quickTakes.filter(
+  const filteredTakes = takes.filter(
     (take) =>
-      (selectedTopic === "All" || take.topic === selectedTopic) &&
+      (activeTopic === "All" || take.topic === activeTopic) &&
       (take.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
         take.topic.toLowerCase().includes(searchTerm.toLowerCase()))
   );
@@ -74,15 +86,15 @@ export default function QuickTakesPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/30 text-foreground">
-      <div className="container mx-auto px-4 py-16 sm:py-24">
+      <div className="container mx-auto px-4 py-12 sm:px-6 sm:py-24">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
           className="mx-auto mb-10 max-w-3xl text-center"
         >
-          <h1 className="text-5xl font-bold tracking-tight sm:text-6xl">Quick Takes</h1>
-          <p className="mt-4 text-lg text-muted-foreground">
+          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">Quick Takes</h1>
+          <p className="mt-4 text-base text-muted-foreground sm:text-lg">
             Short opinions built for response. Agree or disagree to register your stance.
           </p>
         </motion.div>
@@ -111,8 +123,8 @@ export default function QuickTakesPage() {
         </div>
 
         <div className="mx-auto mb-8 flex max-w-4xl flex-wrap gap-2">
-          {quickTakeTopics.map((topic) => {
-            const isActive = selectedTopic === topic;
+          {topicOptions.map((topic) => {
+            const isActive = activeTopic === topic;
 
             return (
               <button
@@ -135,10 +147,11 @@ export default function QuickTakesPage() {
           {visibleTakes.map((take, index) => (
             <motion.div
               key={take.id}
+              id={`quick-take-${take.id}`}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: index * 0.1 }}
-              className="rounded-2xl border border-border bg-card/85 p-5 shadow-sm"
+              className="scroll-mt-24 rounded-2xl border border-border bg-card/85 p-5 shadow-sm"
             >
               <p className="text-xl leading-relaxed">{take.content}</p>
               <div className="flex items-center justify-between text-sm text-muted-foreground">
@@ -148,13 +161,6 @@ export default function QuickTakesPage() {
                 <span className="mt-4">{take.date}</span>
               </div>
 
-              <EngagementPanel
-                itemKey={`quick-take:${take.id}`}
-                title=""
-                commentsEnabled={false}
-                voteStyle="polarity"
-                showStatusText={false}
-              />
             </motion.div>
           ))}
         </div>

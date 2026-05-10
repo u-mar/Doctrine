@@ -6,6 +6,7 @@ export interface Idea {
   date: string;
   topic: string;
   content: string;
+  status?: string;
 }
 
 export const ideas: Idea[] = [

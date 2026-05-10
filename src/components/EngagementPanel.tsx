@@ -24,45 +24,67 @@ export default function EngagementPanel({
   voteStyle = "default",
   showStatusText = true,
 }: EngagementPanelProps) {
-  const storageKey = useMemo(() => `engagement:${itemKey}`, [itemKey]);
-
   const [vote, setVote] = useState<Vote>(null);
   const [comments, setComments] = useState<string[]>([]);
   const [newComment, setNewComment] = useState("");
+  const [loaded, setLoaded] = useState(false);
+
+  const queryKey = useMemo(() => encodeURIComponent(itemKey), [itemKey]);
 
   useEffect(() => {
-    const stored = window.localStorage.getItem(storageKey);
-
-    if (!stored) {
-      return;
-    }
-
-    try {
-      const parsed = JSON.parse(stored) as EngagementState;
-
-      if (parsed.vote === "agree" || parsed.vote === "disagree") {
-        setVote(parsed.vote);
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const response = await fetch(`/api/content/engagement?itemKey=${queryKey}`);
+        if (!response.ok) {
+          return;
+        }
+        const data = (await response.json()) as {
+          vote?: Vote;
+          comments?: string[];
+        };
+        if (cancelled) {
+          return;
+        }
+        if (data.vote === "agree" || data.vote === "disagree") {
+          setVote(data.vote);
+        } else {
+          setVote(null);
+        }
+        if (Array.isArray(data.comments)) {
+          setComments(data.comments.filter((item) => typeof item === "string"));
+        }
+      } finally {
+        if (!cancelled) {
+          setLoaded(true);
+        }
       }
+    };
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [queryKey]);
 
-      if (Array.isArray(parsed.comments)) {
-        setComments(parsed.comments.filter((item) => typeof item === "string"));
-      }
-    } catch {
-      window.localStorage.removeItem(storageKey);
-    }
-  }, [storageKey]);
-
-  const persist = (nextState: EngagementState) => {
-    window.localStorage.setItem(storageKey, JSON.stringify(nextState));
+  const persist = async (nextState: EngagementState) => {
+    await fetch("/api/content/engagement", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        itemKey,
+        vote: nextState.vote,
+        comments: nextState.comments,
+      }),
+    });
   };
 
-  const handleVote = (nextVote: Exclude<Vote, null>) => {
+  const handleVote = async (nextVote: Exclude<Vote, null>) => {
     const finalVote = vote === nextVote ? null : nextVote;
     setVote(finalVote);
-    persist({ vote: finalVote, comments });
+    await persist({ vote: finalVote, comments });
   };
 
-  const handleSubmitComment = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmitComment = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!commentsEnabled) {
@@ -78,8 +100,16 @@ export default function EngagementPanel({
     const nextComments = [cleaned, ...comments].slice(0, 10);
     setComments(nextComments);
     setNewComment("");
-    persist({ vote, comments: nextComments });
+    await persist({ vote, comments: nextComments });
   };
+
+  if (!loaded) {
+    return (
+      <section className="mt-5 rounded-xl border border-border bg-muted/40 p-4">
+        <p className="text-xs text-muted-foreground">Loading engagement…</p>
+      </section>
+    );
+  }
 
   return (
     <section className="mt-5 rounded-xl border border-border bg-muted/40 p-4">
@@ -90,7 +120,7 @@ export default function EngagementPanel({
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <button
           type="button"
-          onClick={() => handleVote("agree")}
+          onClick={() => void handleVote("agree")}
           className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
             voteStyle === "polarity"
               ? vote === "agree"
@@ -105,7 +135,7 @@ export default function EngagementPanel({
         </button>
         <button
           type="button"
-          onClick={() => handleVote("disagree")}
+          onClick={() => void handleVote("disagree")}
           className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
             voteStyle === "polarity"
               ? vote === "disagree"
@@ -127,7 +157,7 @@ export default function EngagementPanel({
 
       {commentsEnabled && (
         <>
-          <form onSubmit={handleSubmitComment} className="mt-4 flex gap-2">
+          <form onSubmit={(e) => void handleSubmitComment(e)} className="mt-4 flex gap-2">
             <input
               type="text"
               value={newComment}
