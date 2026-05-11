@@ -29,7 +29,7 @@ export default function RootLayout({
         className={`min-h-dvh bg-background text-foreground antialiased ${inter.className}`}
         suppressHydrationWarning
       >
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
           <div className="flex flex-col min-h-screen">
             <Navbar />
             <main className="flex-grow">{children}</main>

@@ -39,7 +39,7 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="fixed left-0 right-0 top-0 z-50 border-b border-border/50 bg-background/90 pt-[env(safe-area-inset-top)] backdrop-blur-md supports-[backdrop-filter]:bg-background/75">
+    <nav className="fixed left-0 right-0 top-0 z-[100] border-b border-border bg-background pt-[env(safe-area-inset-top)] md:border-border/50 md:bg-background/90 md:backdrop-blur-md md:supports-[backdrop-filter]:bg-background/75">
       <div className="container mx-auto max-w-6xl px-3 sm:px-4">
         <div className="flex h-16 items-center justify-between">
           <Link href="/" className="flex min-w-0 flex-col leading-tight">
@@ -90,7 +90,7 @@ export default function Navbar() {
           <button
             type="button"
             aria-label="Close navigation"
-            className="fixed inset-0 z-[55] bg-foreground/20 backdrop-blur-[3px] md:hidden"
+            className="fixed inset-0 z-[110] bg-foreground/35 backdrop-blur-sm md:hidden dark:bg-background/60"
             onClick={() => setMobileOpen(false)}
           />
           <div
@@ -98,7 +98,7 @@ export default function Navbar() {
             role="dialog"
             aria-modal="true"
             aria-label="Site navigation"
-            className="fixed left-3 right-3 top-[calc(4rem+env(safe-area-inset-top)+12px)] z-[60] flex max-h-[min(78vh,calc(100dvh-5rem-env(safe-area-inset-bottom)))] flex-col gap-0.5 overflow-y-auto overscroll-contain rounded-2xl border border-border/50 bg-popover p-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-lg ring-1 ring-black/5 md:hidden dark:ring-white/10"
+            className="fixed left-3 right-3 top-[calc(4rem+env(safe-area-inset-top)+12px)] z-[120] flex max-h-[min(78vh,calc(100dvh-5rem-env(safe-area-inset-bottom)))] flex-col gap-0.5 overflow-y-auto overscroll-contain rounded-2xl border border-border bg-popover p-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-xl ring-1 ring-black/10 md:hidden dark:border-border/60 dark:bg-popover dark:ring-white/15"
           >
             {navLinks.map((link) => {
               const isActive = pathname === link.href || pathname.startsWith(`${link.href}/`);
