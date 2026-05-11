@@ -5,12 +5,37 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+/** Remove leading ATX markdown heading lines (# … / ## …) so previews start with body copy, not the heading title. */
+function stripLeadingMarkdownHeadingLines(text: string): string {
+  const lines = text.replace(/\r\n/g, "\n").split("\n")
+  let i = 0
+  while (i < lines.length) {
+    const line = lines[i] ?? ""
+    const t = line.trim()
+    if (t === "") {
+      i += 1
+      continue
+    }
+    const isAtxHeading =
+      /^#{1,6}\s*$/.test(t) ||
+      /^#{1,6}\s+\S/.test(t) ||
+      /^#{1,6}\S/.test(t)
+    if (isAtxHeading) {
+      i += 1
+      continue
+    }
+    break
+  }
+  return lines.slice(i).join("\n")
+}
+
 /** Strip markdown markers so list excerpts and cards show plain text (e.g. ## headings). */
 export function stripMarkdownForPreview(text: string): string {
   if (!text.trim()) {
     return ""
   }
   let s = text.replace(/\r\n/g, "\n")
+  s = stripLeadingMarkdownHeadingLines(s)
   s = s.replace(/^#{1,6}\s*/gm, "")
   s = s.replace(/\*\*([^*]+)\*\*/g, "$1")
   s = s.replace(/\*([^*]+)\*/g, "$1")

@@ -98,6 +98,26 @@ export default function AdminPage() {
   const [qtEditTopic, setQtEditTopic] = useState("");
   const [qtEditDate, setQtEditDate] = useState("");
 
+  const adminFeedbackTimerRef = useRef<ReturnType<typeof window.setTimeout> | undefined>(undefined);
+
+  const showDraftNotice = (message: string, durationMs = 3200) => {
+    setContentFeedback("");
+    if (adminFeedbackTimerRef.current) {
+      window.clearTimeout(adminFeedbackTimerRef.current);
+    }
+    setDraftFeedback(message);
+    adminFeedbackTimerRef.current = window.setTimeout(() => setDraftFeedback(""), durationMs);
+  };
+
+  const showContentNotice = (message: string, durationMs = 3200) => {
+    setDraftFeedback("");
+    if (adminFeedbackTimerRef.current) {
+      window.clearTimeout(adminFeedbackTimerRef.current);
+    }
+    setContentFeedback(message);
+    adminFeedbackTimerRef.current = window.setTimeout(() => setContentFeedback(""), durationMs);
+  };
+
   const reloadContent = async () => {
     const [ideasResponse, journalResponse, takesResponse] = await Promise.all([
       fetch("/api/content/ideas?includeHidden=true"),
@@ -153,6 +173,9 @@ export default function AdminPage() {
     });
     if (response.ok) {
       await reloadReaderMessages();
+      showContentNotice("Message removed.", 2800);
+    } else {
+      showContentNotice("Could not remove message.", 3500);
     }
   };
 
@@ -257,12 +280,10 @@ export default function AdminPage() {
     });
     if (response.ok) {
       await reloadDrafts();
-      setDraftFeedback("Draft created successfully.");
-      window.setTimeout(() => setDraftFeedback(""), 2000);
+      showDraftNotice("Draft created successfully.", 2800);
     } else {
       console.error("Failed to create draft:", await response.text());
-      setDraftFeedback("Failed to create draft.");
-      window.setTimeout(() => setDraftFeedback(""), 2000);
+      showDraftNotice("Failed to create draft.", 3200);
     }
 
     setTitle("");
@@ -284,6 +305,9 @@ export default function AdminPage() {
     });
     if (response.ok) {
       await reloadDrafts();
+      showDraftNotice(`Draft status set to ${nextStatus}.`, 2800);
+    } else {
+      showDraftNotice("Could not update draft status.", 3200);
     }
   };
 
@@ -296,10 +320,11 @@ export default function AdminPage() {
     if (response.ok) {
       await reloadDrafts();
       await reloadContent();
-      setContentFeedback("Draft published successfully.");
-      window.setTimeout(() => setContentFeedback(""), 2000);
+      showDraftNotice("Draft published successfully.", 3800);
     } else {
-      console.error("Failed to publish draft:", await response.text());
+      const err = await response.text().catch(() => "");
+      console.error("Failed to publish draft:", err);
+      showDraftNotice("Failed to publish draft. Check the console or try again.", 4500);
     }
   };
 
@@ -310,6 +335,9 @@ export default function AdminPage() {
       if (editingDraftId === id) {
         setEditingDraftId(null);
       }
+      showDraftNotice("Draft removed.", 2800);
+    } else {
+      showDraftNotice("Could not remove draft.", 3200);
     }
   };
 
@@ -322,12 +350,14 @@ export default function AdminPage() {
     });
     if (response.ok) {
       await reloadDrafts();
-      setDraftFeedback(
+      showDraftNotice(
         nextVis === "public"
           ? "Draft is public — it appears on Ideas with a draft stamp."
-          : "Draft is private — link-only via admin."
+          : "Draft is private — link-only via admin.",
+        3200
       );
-      window.setTimeout(() => setDraftFeedback(""), 2800);
+    } else {
+      showDraftNotice("Could not update draft visibility.", 3500);
     }
   };
 
@@ -359,12 +389,10 @@ export default function AdminPage() {
     });
     if (response.ok) {
       await reloadDrafts();
-      setDraftFeedback("Draft updated.");
-      window.setTimeout(() => setDraftFeedback(""), 2000);
+      showDraftNotice("Draft updated successfully.", 3200);
       setEditingDraftId(null);
     } else {
-      setDraftFeedback("Could not update draft.");
-      window.setTimeout(() => setDraftFeedback(""), 2500);
+      showDraftNotice("Could not update draft.", 3500);
     }
   };
 
@@ -394,12 +422,10 @@ export default function AdminPage() {
     });
     if (response.ok) {
       await reloadContent();
-      setContentFeedback("Quick take saved.");
-      window.setTimeout(() => setContentFeedback(""), 2000);
+      showContentNotice("Quick take saved successfully.", 3200);
       setEditingQuickTakeId(null);
     } else {
-      setContentFeedback("Could not save quick take.");
-      window.setTimeout(() => setContentFeedback(""), 2500);
+      showContentNotice("Could not save quick take.", 3500);
     }
   };
 
@@ -520,9 +546,10 @@ export default function AdminPage() {
     });
     if (response.ok) {
       await reloadContent();
+      showContentNotice("Idea is now private — hidden from the public site.", 3200);
+    } else {
+      showContentNotice("Could not make idea private.", 3500);
     }
-    setContentFeedback("Idea is now private — hidden from the public site.");
-    window.setTimeout(() => setContentFeedback(""), 2400);
   };
 
   const deleteJournalEntry = async (slug: string) => {
@@ -533,9 +560,10 @@ export default function AdminPage() {
     });
     if (response.ok) {
       await reloadContent();
+      showContentNotice("Brief is now private — hidden from the public site.", 3200);
+    } else {
+      showContentNotice("Could not make brief private.", 3500);
     }
-    setContentFeedback("Brief is now private — hidden from the public site.");
-    window.setTimeout(() => setContentFeedback(""), 2400);
   };
 
   const restoreIdeaEntry = async (slug: string) => {
@@ -546,9 +574,10 @@ export default function AdminPage() {
     });
     if (response.ok) {
       await reloadContent();
+      showContentNotice("Idea is now public on the site.", 3200);
+    } else {
+      showContentNotice("Could not make idea public.", 3500);
     }
-    setContentFeedback("Idea is now public on the site.");
-    window.setTimeout(() => setContentFeedback(""), 2400);
   };
 
   const restoreJournalEntry = async (slug: string) => {
@@ -559,9 +588,10 @@ export default function AdminPage() {
     });
     if (response.ok) {
       await reloadContent();
+      showContentNotice("Brief is now public on the site.", 3200);
+    } else {
+      showContentNotice("Could not make brief public.", 3500);
     }
-    setContentFeedback("Brief is now public on the site.");
-    window.setTimeout(() => setContentFeedback(""), 2400);
   };
 
   const toggleQuickTakeVisibility = async (id: number, makeHidden: boolean) => {
@@ -572,11 +602,13 @@ export default function AdminPage() {
     });
     if (response.ok) {
       await reloadContent();
+      showContentNotice(
+        makeHidden ? "Quick take is now private." : "Quick take is now public on the site.",
+        3200
+      );
+    } else {
+      showContentNotice("Could not update quick take visibility.", 3500);
     }
-    setContentFeedback(
-      makeHidden ? "Quick take is now private." : "Quick take is now public on the site."
-    );
-    window.setTimeout(() => setContentFeedback(""), 2400);
   };
 
   const sidebarTabs: { key: AdminTab; label: string; hint: string }[] = [
@@ -635,6 +667,8 @@ export default function AdminPage() {
   }, [ideaRows, journalRows, contentFilter]);
 
   const currentTab = sidebarTabs.find((tab) => tab.key === activeTab);
+  const adminNoticeText = contentFeedback || draftFeedback;
+  const adminNoticeIsError = /^(Failed|Could not)/i.test(adminNoticeText.trim());
 
   return (
     <div className="min-h-screen bg-muted/35 text-foreground">
@@ -675,6 +709,19 @@ export default function AdminPage() {
             })}
           </nav>
         </div>
+        {adminNoticeText ? (
+          <div
+            role="status"
+            aria-live="polite"
+            className={`border-t px-4 py-2.5 text-center text-sm font-medium lg:px-6 ${
+              adminNoticeIsError
+                ? "border-destructive/30 bg-destructive/10 text-destructive"
+                : "border-emerald-600/25 bg-emerald-500/10 text-emerald-950 dark:border-emerald-400/20 dark:bg-emerald-500/15 dark:text-emerald-50"
+            }`}
+          >
+            {adminNoticeText}
+          </div>
+        ) : null}
         <div className="border-t border-border bg-muted/40 px-4 py-2.5 lg:px-6">
           <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-5 gap-y-1 text-xs text-muted-foreground">
             <span>
@@ -799,7 +846,6 @@ export default function AdminPage() {
                   Stage ideas, briefs, and quick takes before publishing. Drafts are stored in your database; set visibility
                   to public when you want them listed on Ideas with a clear draft stamp.
                 </p>
-                {draftFeedback && <p className="mt-2 text-xs text-primary">{draftFeedback}</p>}
 
                 <form onSubmit={(event) => void handleCreateDraft(event)} className="mt-6 space-y-4">
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
@@ -1289,7 +1335,6 @@ export default function AdminPage() {
                 <strong className="font-medium text-foreground">Make public</strong> to show again anytime. Edits sync as you type;
                 use Save changes for the full document.
               </p>
-              {contentFeedback && <p className="mt-2 text-xs text-primary">{contentFeedback}</p>}
             </section>
 
             <section className="rounded-2xl border border-border bg-card/85 p-5 shadow-sm">
@@ -1525,13 +1570,12 @@ export default function AdminPage() {
                             }),
                           });
                           if (response.ok) {
-                            setContentFeedback("Opinion saved to the database.");
+                            showContentNotice("Opinion saved successfully.", 3500);
                             setSelectedIdea(null);
                             await reloadContent();
                           } else {
-                            setContentFeedback("Could not save opinion.");
+                            showContentNotice("Could not save opinion.", 4000);
                           }
-                          window.setTimeout(() => setContentFeedback(""), 2800);
                         }}
                       >
                         Save changes
@@ -1641,13 +1685,12 @@ export default function AdminPage() {
                             }),
                           });
                           if (response.ok) {
-                            setContentFeedback("Brief saved to the database.");
+                            showContentNotice("Brief saved successfully.", 3500);
                             setSelectedJournal(null);
                             await reloadContent();
                           } else {
-                            setContentFeedback("Could not save brief.");
+                            showContentNotice("Could not save brief.", 4000);
                           }
-                          window.setTimeout(() => setContentFeedback(""), 2800);
                         }}
                       >
                         Save changes
@@ -1871,6 +1914,9 @@ export default function AdminPage() {
                         homeNoticeBubbleEnabled: raw.homeNoticeBubbleEnabled ?? prev.homeNoticeBubbleEnabled,
                         homeNoticeBubbleMessage: raw.homeNoticeBubbleMessage ?? prev.homeNoticeBubbleMessage,
                       }));
+                      showContentNotice("Home notice preference saved.", 3200);
+                    } else {
+                      showContentNotice("Could not save home notice preference.", 3500);
                     }
                   });
                 }}
@@ -1920,6 +1966,9 @@ export default function AdminPage() {
                           homeNoticeBubbleEnabled: raw.homeNoticeBubbleEnabled ?? prev.homeNoticeBubbleEnabled,
                           homeNoticeBubbleMessage: raw.homeNoticeBubbleMessage ?? prev.homeNoticeBubbleMessage,
                         }));
+                        showContentNotice("Home notice message saved successfully.", 3200);
+                      } else {
+                        showContentNotice("Could not save home notice message.", 3500);
                       }
                     });
                   }}
@@ -1962,6 +2011,9 @@ export default function AdminPage() {
                           homeNoticeBubbleEnabled: raw.homeNoticeBubbleEnabled ?? prev.homeNoticeBubbleEnabled,
                           homeNoticeBubbleMessage: raw.homeNoticeBubbleMessage ?? prev.homeNoticeBubbleMessage,
                         }));
+                        showContentNotice("Moderation setting saved successfully.", 3200);
+                      } else {
+                        showContentNotice("Could not save moderation setting.", 3500);
                       }
                     });
                   }}
