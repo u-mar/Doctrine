@@ -98,24 +98,24 @@ export default function AdminPage() {
   const [qtEditTopic, setQtEditTopic] = useState("");
   const [qtEditDate, setQtEditDate] = useState("");
 
-  const adminFeedbackTimerRef = useRef<ReturnType<typeof window.setTimeout> | undefined>(undefined);
+  const adminFeedbackTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const showDraftNotice = (message: string, durationMs = 3200) => {
     setContentFeedback("");
     if (adminFeedbackTimerRef.current) {
-      window.clearTimeout(adminFeedbackTimerRef.current);
+      clearTimeout(adminFeedbackTimerRef.current);
     }
     setDraftFeedback(message);
-    adminFeedbackTimerRef.current = window.setTimeout(() => setDraftFeedback(""), durationMs);
+    adminFeedbackTimerRef.current = setTimeout(() => setDraftFeedback(""), durationMs);
   };
 
   const showContentNotice = (message: string, durationMs = 3200) => {
     setDraftFeedback("");
     if (adminFeedbackTimerRef.current) {
-      window.clearTimeout(adminFeedbackTimerRef.current);
+      clearTimeout(adminFeedbackTimerRef.current);
     }
     setContentFeedback(message);
-    adminFeedbackTimerRef.current = window.setTimeout(() => setContentFeedback(""), durationMs);
+    adminFeedbackTimerRef.current = setTimeout(() => setContentFeedback(""), durationMs);
   };
 
   const reloadContent = async () => {
