@@ -39,7 +39,7 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="fixed left-0 right-0 top-0 z-[100] border-b border-border bg-background pt-[env(safe-area-inset-top)] md:border-border/50 md:bg-background/90 md:backdrop-blur-md md:supports-[backdrop-filter]:bg-background/75">
+    <nav className="fixed left-0 right-0 top-0 z-[100] border-b border-border bg-background pt-[env(safe-area-inset-top)] backdrop-blur-md supports-[backdrop-filter]:bg-background/90">
       <div className="container mx-auto max-w-6xl px-3 sm:px-4">
         <div className="flex h-16 items-center justify-between">
           <Link href="/" className="flex min-w-0 flex-col leading-tight">

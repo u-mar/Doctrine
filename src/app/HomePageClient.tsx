@@ -39,16 +39,16 @@ export default function HomePageClient({
   homeNoticeBubble: HomeNoticeBubble;
 }) {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/30 text-foreground">
+    <div className="min-h-screen overflow-x-hidden bg-gradient-to-b from-background via-background to-muted/30 text-foreground">
       <main className="container mx-auto max-w-6xl px-4 pb-12 pt-[calc(4rem+env(safe-area-inset-top,0px)+0.5rem)] sm:px-6 sm:pt-[calc(4rem+env(safe-area-inset-top,0px)+0.75rem)]">
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="relative mb-16 flex min-h-[82dvh] flex-col items-center justify-center px-2 py-10 sm:mb-24 sm:min-h-screen sm:py-14"
+          className="relative mb-16 flex min-h-[82dvh] flex-col items-center justify-center overflow-hidden px-2 py-10 sm:mb-24 sm:min-h-screen sm:py-14"
         >
-          <div className="pointer-events-none absolute -left-20 -top-24 h-64 w-64 rounded-full bg-orange-300/20 blur-3xl dark:bg-orange-500/20" />
-          <div className="pointer-events-none absolute -right-16 -bottom-20 h-64 w-64 rounded-full bg-cyan-300/20 blur-3xl dark:bg-cyan-500/20" />
+          <div className="pointer-events-none absolute left-0 top-0 h-64 w-64 -translate-x-1/2 -translate-y-1/3 rounded-full bg-orange-300/20 blur-3xl dark:bg-orange-500/20" />
+          <div className="pointer-events-none absolute bottom-0 right-0 h-64 w-64 translate-x-1/2 translate-y-1/3 rounded-full bg-cyan-300/20 blur-3xl dark:bg-cyan-500/20" />
 
           <div className="relative mx-auto max-w-5xl text-center">
             <h1

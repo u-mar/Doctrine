@@ -594,6 +594,39 @@ export default function AdminPage() {
     }
   };
 
+  const permanentlyDeleteIdea = async (slug: string) => {
+    if (!window.confirm(`Permanently delete this idea? This cannot be undone.`)) return;
+    const response = await fetch(`/api/content/ideas/${encodeURIComponent(slug)}`, { method: "DELETE" });
+    if (response.ok) {
+      await reloadContent();
+      showContentNotice("Idea permanently deleted.", 3200);
+    } else {
+      showContentNotice("Could not delete idea.", 3500);
+    }
+  };
+
+  const permanentlyDeleteJournal = async (slug: string) => {
+    if (!window.confirm(`Permanently delete this brief? This cannot be undone.`)) return;
+    const response = await fetch(`/api/content/briefs/${encodeURIComponent(slug)}`, { method: "DELETE" });
+    if (response.ok) {
+      await reloadContent();
+      showContentNotice("Brief permanently deleted.", 3200);
+    } else {
+      showContentNotice("Could not delete brief.", 3500);
+    }
+  };
+
+  const permanentlyDeleteQuickTake = async (id: number) => {
+    if (!window.confirm(`Permanently delete this quick take? This cannot be undone.`)) return;
+    const response = await fetch(`/api/content/quick-takes/${id}`, { method: "DELETE" });
+    if (response.ok) {
+      await reloadContent();
+      showContentNotice("Quick take permanently deleted.", 3200);
+    } else {
+      showContentNotice("Could not delete quick take.", 3500);
+    }
+  };
+
   const toggleQuickTakeVisibility = async (id: number, makeHidden: boolean) => {
     const response = await fetch(`/api/content/quick-takes/${id}`, {
       method: "PATCH",
@@ -1463,6 +1496,17 @@ export default function AdminPage() {
                             Make private
                           </button>
                         )}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            void (isIdea
+                              ? permanentlyDeleteIdea(item.slug)
+                              : permanentlyDeleteJournal(item.slug))
+                          }
+                          className="rounded-lg border border-destructive/40 px-3 py-1.5 text-xs font-medium text-destructive transition-colors hover:bg-destructive/10"
+                        >
+                          Delete
+                        </button>
                       </div>
                     </div>
                   );
@@ -1812,6 +1856,13 @@ export default function AdminPage() {
                           Make private
                         </button>
                       )}
+                      <button
+                        type="button"
+                        onClick={() => void permanentlyDeleteQuickTake(item.id)}
+                        className="rounded-lg border border-destructive/40 px-3 py-1.5 text-xs font-medium text-destructive transition-colors hover:bg-destructive/10"
+                      >
+                        Delete
+                      </button>
                     </div>
                   </div>
                 ))}

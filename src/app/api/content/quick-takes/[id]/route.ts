@@ -2,6 +2,24 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ensureContentSeeded } from "@/lib/content/seed";
 
+export async function DELETE(_request: Request, context: { params: Promise<{ id: string }> }) {
+  try {
+    await ensureContentSeeded();
+    const { id } = await context.params;
+    const legacyId = Number.parseInt(id, 10);
+    if (Number.isNaN(legacyId)) {
+      return NextResponse.json({ error: "Invalid id" }, { status: 400 });
+    }
+    await prisma.quickTakeEntry.delete({ where: { legacyId } });
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Failed to delete quick take" },
+      { status: 500 }
+    );
+  }
+}
+
 export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
     await ensureContentSeeded();

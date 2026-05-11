@@ -32,6 +32,20 @@ export async function GET(_request: Request, context: { params: Promise<{ slug: 
   }
 }
 
+export async function DELETE(_request: Request, context: { params: Promise<{ slug: string }> }) {
+  try {
+    await ensureContentSeeded();
+    const { slug } = await context.params;
+    await prisma.journalEntry.delete({ where: { slug } });
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Failed to delete brief" },
+      { status: 500 }
+    );
+  }
+}
+
 export async function PATCH(request: Request, context: { params: Promise<{ slug: string }> }) {
   try {
     await ensureContentSeeded();

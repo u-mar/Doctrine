@@ -55,7 +55,7 @@ export default function IdeasPageClient({ initialIdeas }: { initialIdeas: Idea[]
         >
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">Ideas</h1>
           <p className="mt-4 text-base leading-relaxed text-muted-foreground sm:text-lg">
-            Proposed ideas and approaches for addressing key issues and challenges.
+          Proposed Approaches for Governance and State-Building
           </p>
         </motion.div>
 
