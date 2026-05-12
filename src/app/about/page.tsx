@@ -23,7 +23,7 @@ const AnimatedSection: FC<AnimatedSectionProps> = ({ children, delay = 0 }) => {
 
 const AboutPage: FC = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/25 text-foreground font-sans">
+    <div className="min-h-screen bg-gradient-to-b from-canvas via-canvas to-muted/25 text-foreground font-sans">
       <div className="container mx-auto px-4 pt-[calc(4rem+env(safe-area-inset-top,0px)+1rem)] pb-16 sm:px-6 sm:pb-24 sm:pt-[calc(4rem+env(safe-area-inset-top,0px)+1.25rem)] lg:px-8">
         <div className="mx-auto max-w-2xl">
           <h1 className="mb-10 text-center text-3xl font-bold tracking-tight text-foreground sm:text-4xl">

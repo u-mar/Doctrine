@@ -45,7 +45,7 @@ export default function IdeasPageClient({ initialIdeas }: { initialIdeas: Idea[]
   const emptySite = displayIdeas.length === 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/30 text-foreground">
+    <div className="min-h-screen bg-gradient-to-b from-canvas via-canvas to-muted/30 text-foreground">
       <div className="container mx-auto px-4 pt-[calc(4rem+env(safe-area-inset-top,0px)+0.75rem)] pb-12 sm:px-6 sm:pb-24 sm:pt-[calc(4rem+env(safe-area-inset-top,0px)+1rem)]">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

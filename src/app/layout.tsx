@@ -26,7 +26,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`min-h-dvh bg-background text-foreground antialiased ${inter.className}`}
+        className={`min-h-dvh bg-canvas text-foreground antialiased ${inter.className}`}
         suppressHydrationWarning
       >
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>

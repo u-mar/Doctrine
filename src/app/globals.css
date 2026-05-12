@@ -39,6 +39,8 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  /* Page backdrop (slight chroma); edges never fall back to flat gray/white */
+  --color-canvas: var(--canvas);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -50,6 +52,7 @@
 
 :root {
   --background: oklch(0.985 0.01 95);
+  --canvas: oklch(0.976 0.016 95);
   --foreground: oklch(0.24 0.02 255);
   --card: oklch(0.995 0.008 90);
   --card-foreground: oklch(0.24 0.02 255);
@@ -85,6 +88,7 @@
 
 .dark {
   --background: oklch(0.145 0 0);
+  --canvas: oklch(0.162 0.032 268);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
   --card-foreground: oklch(0.985 0 0);
@@ -121,33 +125,44 @@
   * {
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply bg-background text-foreground;
-    background-image:
-      radial-gradient(1200px 600px at -10% -20%, oklch(0.9 0.06 210 / 0.18), transparent 60%),
-      radial-gradient(900px 520px at 110% -10%, oklch(0.92 0.06 140 / 0.15), transparent 55%),
-      linear-gradient(to bottom, oklch(1 0.004 80), oklch(0.98 0.01 95));
-    background-attachment: fixed;
+  html {
+    @apply font-sans;
+    overflow-x: clip;
+    background-color: var(--canvas);
   }
 
-  @media (max-width: 640px) {
-    body {
-      background-image:
-        radial-gradient(900px 480px at -10% -15%, oklch(0.93 0.05 210 / 0.12), transparent 58%),
-        radial-gradient(700px 420px at 110% -8%, oklch(0.96 0.04 140 / 0.1), transparent 52%),
-        linear-gradient(to bottom, oklch(1 0.003 80), oklch(0.99 0.008 95));
-    }
+  body {
+    @apply text-foreground;
+    background-color: var(--canvas);
+    /* Fade to var(--canvas) instead of transparent so left/right never read as flat white */
+    background-image:
+      radial-gradient(ellipse 200% 115% at 50% -18%, oklch(0.93 0.065 85 / 0.48), var(--canvas) 72%),
+      radial-gradient(ellipse 110% 95% at 0% 48%, oklch(0.93 0.05 210 / 0.26), var(--canvas) 58%),
+      radial-gradient(ellipse 110% 95% at 100% 48%, oklch(0.94 0.045 150 / 0.22), var(--canvas) 58%);
+    background-attachment: fixed;
   }
 
   .dark body {
     background-image:
-      radial-gradient(1000px 520px at -10% -20%, oklch(0.3 0.08 255 / 0.22), transparent 62%),
-      radial-gradient(800px 460px at 110% -10%, oklch(0.35 0.09 165 / 0.18), transparent 58%),
-      linear-gradient(to bottom, oklch(0.16 0.01 260), oklch(0.14 0.01 255));
+      radial-gradient(ellipse 200% 115% at 50% -20%, oklch(0.33 0.11 265 / 0.5), var(--canvas) 72%),
+      radial-gradient(ellipse 110% 100% at 0% 50%, oklch(0.27 0.09 250 / 0.32), var(--canvas) 58%),
+      radial-gradient(ellipse 110% 100% at 100% 50%, oklch(0.28 0.095 175 / 0.3), var(--canvas) 58%);
+    background-attachment: fixed;
   }
 
-  html {
-    @apply font-sans;
-    overflow-x: clip;
+  /* Home hero: full-bleed wash; stops use --canvas (see HomePageClient). */
+  .bg-home-hero-wash {
+    background-color: var(--canvas);
+    background-image:
+      radial-gradient(ellipse 200% 110% at 50% 10%, oklch(0.93 0.06 85 / 0.42), var(--canvas) 70%),
+      radial-gradient(ellipse 115% 90% at 6% 78%, oklch(0.92 0.05 210 / 0.24), var(--canvas) 60%),
+      radial-gradient(ellipse 115% 90% at 94% 78%, oklch(0.94 0.045 145 / 0.22), var(--canvas) 60%);
+  }
+
+  .dark .bg-home-hero-wash {
+    background-image:
+      radial-gradient(ellipse 200% 110% at 50% 8%, oklch(0.34 0.11 265 / 0.48), var(--canvas) 70%),
+      radial-gradient(ellipse 115% 90% at 6% 78%, oklch(0.28 0.09 45 / 0.3), var(--canvas) 60%),
+      radial-gradient(ellipse 115% 90% at 94% 78%, oklch(0.3 0.1 195 / 0.32), var(--canvas) 60%);
   }
 }

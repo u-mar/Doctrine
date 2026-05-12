@@ -1,6 +1,6 @@
 export default function IdeasLoading() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/30">
+    <div className="min-h-screen bg-gradient-to-b from-canvas via-canvas to-muted/30">
       <div className="container mx-auto px-4 pt-[calc(4rem+env(safe-area-inset-top,0px)+1rem)] pb-16 sm:pb-24 sm:pt-[calc(4rem+env(safe-area-inset-top,0px)+1.25rem)]">
         <div className="mx-auto mb-10 max-w-3xl animate-pulse text-center">
           <div className="mx-auto h-14 max-w-xs rounded-lg bg-muted sm:h-16" />

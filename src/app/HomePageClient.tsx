@@ -39,18 +39,20 @@ export default function HomePageClient({
   homeNoticeBubble: HomeNoticeBubble;
 }) {
   return (
-    <div className="min-h-screen overflow-x-hidden bg-gradient-to-b from-background via-background to-muted/30 text-foreground">
-      <main className="container mx-auto max-w-6xl px-4 pb-12 pt-[calc(4rem+env(safe-area-inset-top,0px)+0.5rem)] sm:px-6 sm:pt-[calc(4rem+env(safe-area-inset-top,0px)+0.75rem)]">
+    <div className="min-h-screen overflow-x-hidden bg-gradient-to-b from-canvas via-canvas to-muted/30 text-foreground">
+      {/* Full viewport width: hero atmosphere must not live inside .container or overflow-hidden clips it to the center column */}
+      <div className="relative w-full pt-[calc(4rem+env(safe-area-inset-top,0px)+0.5rem)] sm:pt-[calc(4rem+env(safe-area-inset-top,0px)+0.75rem)]">
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="relative mb-16 flex min-h-[82dvh] flex-col items-center justify-center overflow-hidden px-2 py-10 sm:mb-24 sm:min-h-screen sm:py-14"
+          className="relative mb-16 flex min-h-[82dvh] flex-col items-center justify-center px-4 py-10 sm:mb-24 sm:min-h-screen sm:px-6 sm:py-14"
         >
-          <div className="pointer-events-none absolute left-0 top-0 h-64 w-64 -translate-x-1/2 -translate-y-1/3 rounded-full bg-orange-300/20 blur-3xl dark:bg-orange-500/20" />
-          <div className="pointer-events-none absolute bottom-0 right-0 h-64 w-64 translate-x-1/2 translate-y-1/3 rounded-full bg-cyan-300/20 blur-3xl dark:bg-cyan-500/20" />
+          <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 bg-home-hero-wash" />
+          <div className="pointer-events-none absolute left-0 top-0 z-0 h-64 w-64 -translate-x-1/2 -translate-y-1/3 rounded-full bg-orange-300/20 blur-3xl dark:bg-orange-500/20 md:h-80 md:w-80" />
+          <div className="pointer-events-none absolute bottom-0 right-0 z-0 h-64 w-64 translate-x-1/2 translate-y-1/3 rounded-full bg-cyan-300/20 blur-3xl dark:bg-cyan-500/20 md:h-80 md:w-80" />
 
-          <div className="relative mx-auto max-w-5xl text-center">
+          <div className="relative z-10 mx-auto max-w-5xl text-center">
             <h1
               className={`mx-auto mt-5 max-w-4xl px-1 text-[1.65rem] font-bold italic leading-snug tracking-tight sm:text-5xl sm:leading-tight md:text-6xl ${playfairDisplay.className}`}
             >
@@ -78,7 +80,9 @@ export default function HomePageClient({
             </div>
           </div>
         </motion.section>
+      </div>
 
+      <main className="container mx-auto max-w-6xl px-4 pb-12 sm:px-6">
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
