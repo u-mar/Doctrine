@@ -20,8 +20,13 @@ async function getDraft(id: string) {
   };
 }
 
-export default async function DraftPage({ params }: { params: { id: string } }) {
-  const draft = await getDraft(params.id);
+export default async function DraftPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const draft = await getDraft(id);
 
   const renderedPages = draft?.pages.map((page) => <MDXRenderer key={page.slice(0, 20)} source={page} />);
 
@@ -38,7 +43,7 @@ export default async function DraftPage({ params }: { params: { id: string } }) 
         {draft && renderedPages ? (
           <ContentDisplay
             renderedPages={renderedPages}
-            ratingKey={`draft:${params.id}`}
+            ratingKey={`draft:${id}`}
             title={draft.title}
             date={draft.date}
             topic={draft.topic}

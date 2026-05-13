@@ -20,8 +20,13 @@ async function getIdea(slug: string) {
   };
 }
 
-export default async function IdeaEntryPage({ params }: { params: { slug: string } }) {
-  const idea = await getIdea(params.slug);
+export default async function IdeaEntryPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const idea = await getIdea(slug);
 
   const renderedPages = idea?.pages.map((page) => <MDXRenderer key={page.slice(0, 20)} source={page} />);
 
@@ -38,7 +43,7 @@ export default async function IdeaEntryPage({ params }: { params: { slug: string
         {idea && renderedPages ? (
           <ContentDisplay
             renderedPages={renderedPages}
-            ratingKey={`idea:${params.slug}`}
+            ratingKey={`idea:${slug}`}
             title={idea.title}
             date={idea.date}
             topic={idea.topic}

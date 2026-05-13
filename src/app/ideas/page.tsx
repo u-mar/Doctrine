@@ -3,6 +3,9 @@ import type { Idea } from "@/lib/ideas";
 import { prisma } from "@/lib/prisma";
 import IdeasPageClient from "./IdeasPageClient";
 
+/** Same DB on local + Vercel: always read fresh list so links match current publish/draft state. */
+export const dynamic = "force-dynamic";
+
 async function getIdeasList(): Promise<Idea[]> {
   await ensureContentSeeded();
 
