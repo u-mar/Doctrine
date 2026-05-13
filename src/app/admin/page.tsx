@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { normalizeMarkdownSource } from "@/lib/markdown-normalize";
 import { Idea, ideas } from "@/lib/ideas";
 import { JournalEntry, journalEntries } from "@/lib/journal-entries";
 import type { QuickTake } from "@/lib/quick-takes";
@@ -1018,6 +1019,18 @@ export default function AdminPage() {
                           type="button"
                           onClick={() =>
                             applyNoteFormat("template", {
+                              template:
+                                "### Agenda\n\n- **Personality politics**\n- **Long-term development**\n- **Clan issues**",
+                            })
+                          }
+                          className="rounded-md border border-border px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+                        >
+                          Insert agenda
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            applyNoteFormat("template", {
                               template: "### Key points\n- Insight\n- Risk\n- Action",
                             })
                           }
@@ -1053,6 +1066,12 @@ export default function AdminPage() {
                         </label>
                       </div>
 
+                      <p className="mb-2 text-xs text-muted-foreground">
+                        Lists: put the heading on its own line, then a blank line, then each point on its own line
+                        starting with <code className="rounded bg-muted px-1">- </code> (dash and space). Use{" "}
+                        <span className="font-medium text-foreground">Insert agenda</span> for a ready-made block.
+                        Preview uses the same cleanup as the live site (line endings from Word/email are fixed).
+                      </p>
                       {noteViewMode === "write" ? (
                         <textarea
                           ref={noteInputRef}
@@ -1079,7 +1098,7 @@ export default function AdminPage() {
                           } ${noteDensity === "relaxed" ? "leading-relaxed" : "leading-normal"} prose prose-zinc max-w-none dark:prose-invert prose-headings:scroll-mt-20`}
                         >
                           <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                            {note.trim() ? note : "*Preview will appear here as you write your note.*"}
+                            {note.trim() ? normalizeMarkdownSource(note) : "*Preview will appear here as you write your note.*"}
                           </ReactMarkdown>
                         </div>
                       )}
