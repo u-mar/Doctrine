@@ -21,6 +21,7 @@ export async function GET(request: Request) {
         topic: r.topic,
         content: r.content,
         hidden: r.hidden,
+        showAsDraft: r.showAsDraft,
       }))
     );
   } catch (error) {
@@ -57,6 +58,7 @@ export async function POST(request: Request) {
         topic: body.topic?.trim() ?? "",
         content: body.content?.trim() ?? "",
         hidden: false,
+        showAsDraft: false,
       },
     });
     return NextResponse.json({
@@ -68,6 +70,7 @@ export async function POST(request: Request) {
       topic: created.topic,
       content: created.content,
       hidden: created.hidden,
+      showAsDraft: created.showAsDraft,
     });
   } catch (error) {
     return NextResponse.json(

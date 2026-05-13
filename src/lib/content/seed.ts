@@ -31,6 +31,7 @@ async function runSeed() {
           topic: idea.topic,
           content: idea.content,
           hidden: false,
+          showAsDraft: false,
         },
       });
     }

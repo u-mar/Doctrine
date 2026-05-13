@@ -27,6 +27,7 @@ async function getIdeasList(): Promise<Idea[]> {
     date: r.dateLabel,
     topic: r.topic,
     content: r.content,
+    showAsDraft: r.showAsDraft === true,
   }));
 
   const draftsAsIdeas: Idea[] = publicDrafts.map((d) => ({

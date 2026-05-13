@@ -496,9 +496,11 @@ export default function AdminPage() {
     setIdeaRows((prev) =>
       prev.map((row) => (row.slug === slug ? { ...row, [field]: value } : row))
     );
-    const payload: Record<string, string> = {};
+    const payload: Record<string, unknown> = {};
     if (field === "date") {
       payload.date = String(value);
+    } else if (field === "showAsDraft") {
+      payload.showAsDraft = Boolean(value);
     } else {
       payload[field as string] = String(value);
     }
@@ -683,6 +685,7 @@ export default function AdminPage() {
         slug: item.slug,
         title: item.title,
         hidden: item.hidden,
+        showAsDraft: item.showAsDraft === true,
       })),
       ...journalRows.map((item) => ({
         type: "journal" as const,
@@ -1441,6 +1444,11 @@ export default function AdminPage() {
                               admin created
                             </span>
                           )}
+                          {isIdea && item.showAsDraft ? (
+                            <span className="rounded-full bg-amber-500/20 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-amber-900 dark:text-amber-100">
+                              draft on site
+                            </span>
+                          ) : null}
                         </div>
                       </div>
 
@@ -1534,6 +1542,14 @@ export default function AdminPage() {
                       <p><span className="text-muted-foreground">Topic:</span> {selectedIdeaEntry.topic}</p>
                       <p><span className="text-muted-foreground">Date:</span> {selectedIdeaEntry.date}</p>
                       <p><span className="text-muted-foreground">Reading Time:</span> {selectedIdeaEntry.readingTime}</p>
+                      <p>
+                        <span className="text-muted-foreground">Draft stamp on public site:</span>{" "}
+                        {selectedIdeaEntry.showAsDraft ? (
+                          <span className="font-medium text-amber-700 dark:text-amber-300">On — use Edit to turn off</span>
+                        ) : (
+                          <span className="text-muted-foreground">Off</span>
+                        )}
+                      </p>
                       <p className="text-muted-foreground">Summary:</p>
                       <p className="rounded-lg bg-muted/40 p-3 text-sm">{selectedIdeaEntry.summary}</p>
                     </div>
@@ -1591,6 +1607,23 @@ export default function AdminPage() {
                           className="min-h-28 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                         />
                       </label>
+                      <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 md:col-span-2 dark:border-amber-500/25 dark:bg-amber-500/10">
+                        <input
+                          type="checkbox"
+                          className="mt-0.5 size-4 rounded border-border"
+                          checked={selectedIdeaEntry.showAsDraft === true}
+                          onChange={(event) =>
+                            updateIdeaOverride(selectedIdeaEntry.slug, "showAsDraft", event.target.checked)
+                          }
+                        />
+                        <span className="text-sm leading-snug">
+                          <span className="font-medium text-foreground">Show as draft on the public site</span>
+                          <span className="mt-1 block text-xs text-muted-foreground">
+                            Puts the draft stamp on the Ideas grid, Latest on home, and the watermark on the idea page
+                            until you uncheck this.
+                          </span>
+                        </span>
+                      </label>
                     </div>
                   )}
 
@@ -1611,6 +1644,7 @@ export default function AdminPage() {
                               date: row.date,
                               topic: row.topic,
                               content: row.content,
+                              showAsDraft: row.showAsDraft === true,
                             }),
                           });
                           if (response.ok) {

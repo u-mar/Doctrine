@@ -7,6 +7,8 @@ export interface Idea {
   topic: string;
   content: string;
   status?: string;
+  /** Published idea shown with draft styling until cleared in admin. */
+  showAsDraft?: boolean;
 }
 
 export const ideas: Idea[] = [

@@ -17,6 +17,7 @@ async function getIdea(slug: string) {
     date: row.dateLabel,
     topic: row.topic,
     pages: row.content.split("\n---\n"),
+    showAsDraft: row.showAsDraft === true,
   };
 }
 
@@ -47,6 +48,7 @@ export default async function IdeaEntryPage({
             title={idea.title}
             date={idea.date}
             topic={idea.topic}
+            draftWatermark={idea.showAsDraft}
           />
         ) : (
           <div className="mt-8 rounded-2xl border border-border bg-card/80 p-6 text-muted-foreground shadow-sm">

@@ -9,7 +9,11 @@ import { stripMarkdownForPreview, truncatePlainText } from "@/lib/utils";
 const IDEA_CARD_PREVIEW_CHARS = 160;
 
 function isDraftIdea(idea: Idea): boolean {
-  return idea.status === "Draft" || idea.slug.startsWith("/drafts/");
+  return (
+    idea.status === "Draft" ||
+    idea.slug.startsWith("/drafts/") ||
+    idea.showAsDraft === true
+  );
 }
 
 export default function IdeasPageClient({ initialIdeas }: { initialIdeas: Idea[] }) {

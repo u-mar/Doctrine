@@ -67,6 +67,7 @@ export async function getLatestHomeEntries(limit = 3): Promise<HomeLatestEntry[]
       excerpt: truncateExcerpt(stripMarkdownForPreview(row.summary)),
       href: `/ideas/${row.slug}`,
       sortTime: row.createdAt.getTime(),
+      isDraft: row.showAsDraft === true,
     });
   }
 

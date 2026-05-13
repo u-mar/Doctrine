@@ -23,6 +23,7 @@ export async function GET(_request: Request, context: { params: Promise<{ slug: 
       date: row.dateLabel,
       topic: row.topic,
       content: pages,
+      showAsDraft: row.showAsDraft,
     });
   } catch (error) {
     return NextResponse.json(
@@ -58,6 +59,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ slug:
       topic: string;
       content: string;
       hidden: boolean;
+      showAsDraft: boolean;
     }>;
 
     const data: Record<string, unknown> = {};
@@ -68,6 +70,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ slug:
     if (body.topic !== undefined) data.topic = body.topic;
     if (body.content !== undefined) data.content = body.content;
     if (body.hidden !== undefined) data.hidden = body.hidden;
+    if (body.showAsDraft !== undefined) data.showAsDraft = body.showAsDraft;
 
     const updated = await prisma.ideaEntry.update({
       where: { slug },
@@ -85,6 +88,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ slug:
       topic: updated.topic,
       content: updatedPages,
       hidden: updated.hidden,
+      showAsDraft: updated.showAsDraft,
     });
   } catch (error) {
     return NextResponse.json(
