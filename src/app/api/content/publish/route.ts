@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { stripMarkdownForPreview } from "@/lib/utils";
-import { JSDOM } from "jsdom";
 
 function previewFromNote(note: string, maxLen: number): string {
   const plain = stripMarkdownForPreview(note);
@@ -11,14 +10,46 @@ function previewFromNote(note: string, maxLen: number): string {
   return `${plain.slice(0, maxLen).trimEnd()}…`;
 }
 
+/** Strip tags / decode entities for slugging (avoids jsdom, which breaks on serverless ESM/CJS). */
+function htmlToPlainText(html: string): string {
+  let s = html.replace(/<[^>]*>/g, " ");
+  for (let pass = 0; pass < 8; pass++) {
+    const before = s;
+    s = s
+      .replace(/&nbsp;/gi, " ")
+      .replace(/&lt;/gi, "<")
+      .replace(/&gt;/gi, ">")
+      .replace(/&quot;/gi, '"')
+      .replace(/&apos;/gi, "'")
+      .replace(/&#39;/g, "'")
+      .replace(/&#x27;/gi, "'")
+      .replace(/&#(\d+);/g, (full, dec) => {
+        const n = parseInt(dec, 10);
+        if (!Number.isFinite(n) || n < 0) return full;
+        try {
+          return String.fromCodePoint(n);
+        } catch {
+          return full;
+        }
+      })
+      .replace(/&#x([0-9a-f]+);/gi, (full, hex) => {
+        const n = parseInt(hex, 16);
+        if (!Number.isFinite(n) || n < 0) return full;
+        try {
+          return String.fromCodePoint(n);
+        } catch {
+          return full;
+        }
+      })
+      .replace(/&amp;/gi, "&");
+    if (s === before) break;
+  }
+  return s.replace(/\s+/g, " ").trim();
+}
+
 function generateSlug(title: string) {
-  const dom = new JSDOM();
-  const doc = dom.window.document;
-  const slug = doc.createElement("div");
-  slug.innerHTML = title;
-  return (slug.textContent ?? "")
+  return htmlToPlainText(title)
     .toLowerCase()
-    .trim()
     .replace(/[^a-z0-9\s-]/g, "")
     .replace(/[\s-]+/g, "-");
 }
