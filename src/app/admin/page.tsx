@@ -89,11 +89,8 @@ export default function AdminPage() {
   const [noteFontSize, setNoteFontSize] = useState<NoteFontSize>("base");
   const [noteDensity, setNoteDensity] = useState<NoteDensity>("normal");
   const noteInputRef = useRef<HTMLTextAreaElement | null>(null);
+  const plannerComposerRef = useRef<HTMLElement | null>(null);
   const [editingDraftId, setEditingDraftId] = useState<string | null>(null);
-  const [editDraftTitle, setEditDraftTitle] = useState("");
-  const [editDraftTopic, setEditDraftTopic] = useState("");
-  const [editDraftNote, setEditDraftNote] = useState("");
-  const [editDraftKind, setEditDraftKind] = useState<DraftKind>("idea");
   const [editingQuickTakeId, setEditingQuickTakeId] = useState<number | null>(null);
   const [qtEditContent, setQtEditContent] = useState("");
   const [qtEditTopic, setQtEditTopic] = useState("");
@@ -255,7 +252,7 @@ export default function AdminPage() {
     return Math.max(1, Math.ceil(noteWordCount / 200));
   }, [noteWordCount]);
 
-  const handleCreateDraft = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSaveDraft = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     const cleanedTitle = title.trim();
@@ -266,18 +263,44 @@ export default function AdminPage() {
       return;
     }
 
+    const payload = {
+      kind,
+      title: cleanedTitle,
+      topic: cleanedTopic,
+      note: cleanedNote,
+      status,
+      visibility,
+      scheduledFor: status === "scheduled" ? scheduledFor : "",
+    };
+
+    if (editingDraftId) {
+      const response = await fetch(`/api/content/drafts/${editingDraftId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (response.ok) {
+        await reloadDrafts();
+        showDraftNotice("Draft updated successfully.", 3200);
+        setEditingDraftId(null);
+        setTitle("");
+        setTopic("");
+        setNote("");
+        setStatus("draft");
+        setKind("idea");
+        setVisibility("private");
+        setScheduledFor("");
+      } else {
+        console.error("Failed to update draft:", await response.text());
+        showDraftNotice("Failed to update draft.", 3200);
+      }
+      return;
+    }
+
     const response = await fetch("/api/content/drafts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        kind,
-        title: cleanedTitle,
-        topic: cleanedTopic,
-        note: cleanedNote,
-        status,
-        visibility,
-        scheduledFor: status === "scheduled" ? scheduledFor : "",
-      }),
+      body: JSON.stringify(payload),
     });
     if (response.ok) {
       await reloadDrafts();
@@ -291,6 +314,8 @@ export default function AdminPage() {
     setTopic("");
     setNote("");
     setStatus("draft");
+    setKind("idea");
+    setVisibility("private");
     setScheduledFor("");
   };
 
@@ -313,6 +338,7 @@ export default function AdminPage() {
   };
 
   const handlePublishDraft = async (id: string) => {
+    const composingId = editingDraftId;
     const response = await fetch(`/api/content/publish`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -322,6 +348,9 @@ export default function AdminPage() {
       await reloadDrafts();
       await reloadContent();
       showDraftNotice("Draft published successfully.", 3800);
+      if (composingId === id) {
+        cancelDraftEditor();
+      }
     } else {
       const err = await response.text().catch(() => "");
       console.error("Failed to publish draft:", err);
@@ -334,7 +363,7 @@ export default function AdminPage() {
     if (response.ok) {
       await reloadDrafts();
       if (editingDraftId === id) {
-        setEditingDraftId(null);
+        cancelDraftEditor();
       }
       showDraftNotice("Draft removed.", 2800);
     } else {
@@ -364,37 +393,27 @@ export default function AdminPage() {
 
   const openDraftEditor = (draft: Draft) => {
     setEditingDraftId(draft.id);
-    setEditDraftTitle(draft.title);
-    setEditDraftTopic(draft.topic);
-    setEditDraftNote(draft.note);
-    setEditDraftKind(draft.kind);
+    setTitle(draft.title);
+    setTopic(draft.topic);
+    setNote(draft.note);
+    setKind(draft.kind);
+    setStatus(draft.status);
+    setVisibility(draft.visibility);
+    setScheduledFor(draft.scheduledFor ?? "");
+    window.requestAnimationFrame(() => {
+      plannerComposerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   };
 
   const cancelDraftEditor = () => {
     setEditingDraftId(null);
-  };
-
-  const saveEditedDraft = async () => {
-    if (!editingDraftId) {
-      return;
-    }
-    const response = await fetch(`/api/content/drafts/${editingDraftId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title: editDraftTitle.trim(),
-        topic: editDraftTopic.trim(),
-        note: editDraftNote.trim(),
-        kind: editDraftKind,
-      }),
-    });
-    if (response.ok) {
-      await reloadDrafts();
-      showDraftNotice("Draft updated successfully.", 3200);
-      setEditingDraftId(null);
-    } else {
-      showDraftNotice("Could not update draft.", 3500);
-    }
+    setTitle("");
+    setTopic("");
+    setNote("");
+    setStatus("draft");
+    setKind("idea");
+    setVisibility("private");
+    setScheduledFor("");
   };
 
   const openQuickTakeEditor = (item: QuickTakeRow) => {
@@ -877,14 +896,34 @@ export default function AdminPage() {
         {activeTab === "planner" && (
           <div className="space-y-5">
             <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr,300px]">
-              <section className="rounded-2xl border border-border bg-card/85 p-5 shadow-sm sm:p-6">
-                <h2 className="text-2xl font-semibold">Create New Draft</h2>
+              <section
+                ref={plannerComposerRef}
+                className="rounded-2xl border border-border bg-card/85 p-5 shadow-sm sm:p-6"
+              >
+                <h2 className="text-2xl font-semibold">
+                  {editingDraftId ? "Edit draft" : "Create new draft"}
+                </h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Stage ideas, briefs, and quick takes before publishing. Drafts are stored in your database; set visibility
-                  to public when you want them listed on Ideas with a clear draft stamp.
+                  {editingDraftId
+                    ? "You are editing an existing draft. Save updates the same entry — use Cancel to discard and clear the form."
+                    : "Stage ideas, briefs, and quick takes before publishing. Drafts are stored in your database; set visibility to public when you want them listed on Ideas with a clear draft stamp."}
                 </p>
 
-                <form onSubmit={(event) => void handleCreateDraft(event)} className="mt-6 space-y-4">
+                <form onSubmit={(event) => void handleSaveDraft(event)} className="mt-6 space-y-4">
+                  {editingDraftId && (
+                    <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-primary/25 bg-primary/5 px-3 py-2">
+                      <p className="text-xs text-muted-foreground">
+                        Editing draft <span className="font-mono text-foreground">{editingDraftId}</span>
+                      </p>
+                      <button
+                        type="button"
+                        onClick={cancelDraftEditor}
+                        className="rounded-lg border border-border bg-background px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+                      >
+                        Cancel editing
+                      </button>
+                    </div>
+                  )}
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
                     <label className="space-y-1">
                       <span className="text-sm font-medium">Type</span>
@@ -1128,7 +1167,7 @@ export default function AdminPage() {
                     type="submit"
                     className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
                   >
-                    Save Draft
+                    {editingDraftId ? "Update draft" : "Save draft"}
                   </button>
                 </form>
               </section>
@@ -1154,7 +1193,9 @@ export default function AdminPage() {
                 <div>
                   <h3 className="text-lg font-semibold">Draft queue</h3>
                   <p className="mt-0.5 text-xs text-muted-foreground">
-                    Grouped by workflow stage. Public drafts appear on Ideas; readers see a draft stamp on the full page.
+                    Grouped by workflow stage. Use <span className="font-medium text-foreground">Edit in composer</span>{" "}
+                    to load a draft into the form above (full preview + update). Public drafts appear on Ideas with a
+                    draft stamp.
                   </p>
                 </div>
                 <button
@@ -1166,73 +1207,6 @@ export default function AdminPage() {
                 </button>
               </div>
               {copyFeedback && <p className="text-xs text-primary">{copyFeedback}</p>}
-
-              {editingDraftId && (
-                <div className="mt-5 rounded-xl border border-primary/30 bg-primary/5 p-4">
-                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-sm font-semibold">Edit draft</p>
-                    <button
-                      type="button"
-                      onClick={cancelDraftEditor}
-                      className="rounded-lg border border-border px-2.5 py-1 text-xs text-muted-foreground hover:text-foreground"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                    <label className="space-y-1 md:col-span-2">
-                      <span className="text-xs font-medium text-muted-foreground">Title</span>
-                      <input
-                        type="text"
-                        value={editDraftTitle}
-                        onChange={(e) => setEditDraftTitle(e.target.value)}
-                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                        maxLength={90}
-                      />
-                    </label>
-                    <label className="space-y-1">
-                      <span className="text-xs font-medium text-muted-foreground">Topic</span>
-                      <input
-                        type="text"
-                        value={editDraftTopic}
-                        onChange={(e) => setEditDraftTopic(e.target.value)}
-                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                        maxLength={40}
-                      />
-                    </label>
-                    <label className="space-y-1">
-                      <span className="text-xs font-medium text-muted-foreground">Type</span>
-                      <select
-                        value={editDraftKind}
-                        onChange={(e) => setEditDraftKind(e.target.value as DraftKind)}
-                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                      >
-                        <option value="idea">Idea</option>
-                        <option value="journal">Brief</option>
-                        <option value="quick-take">Quick Take</option>
-                      </select>
-                    </label>
-                    <label className="space-y-1 md:col-span-2">
-                      <span className="text-xs font-medium text-muted-foreground">Body (MDX-friendly)</span>
-                      <textarea
-                        value={editDraftNote}
-                        onChange={(e) => setEditDraftNote(e.target.value)}
-                        className="min-h-36 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                        maxLength={20000}
-                      />
-                    </label>
-                  </div>
-                  <div className="mt-3 flex flex-wrap justify-end gap-2">
-                    <button
-                      type="button"
-                      onClick={() => void saveEditedDraft()}
-                      className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
-                    >
-                      Save changes
-                    </button>
-                  </div>
-                </div>
-              )}
 
               {drafts.length === 0 && (
                 <p className="mt-4 text-sm text-muted-foreground">No drafts yet. Create your first one above.</p>
@@ -1285,7 +1259,7 @@ export default function AdminPage() {
                                 onClick={() => openDraftEditor(draft)}
                                 className="rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground hover:text-foreground"
                               >
-                                Edit content
+                                Edit in composer
                               </button>
                               {(["draft", "review", "scheduled", "published"] as DraftStatus[]).map((draftStatus) => (
                                 <button
