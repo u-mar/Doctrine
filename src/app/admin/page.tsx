@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkBreaks from "remark-breaks";
 import { normalizeMarkdownSource } from "@/lib/markdown-normalize";
 import { Idea, ideas } from "@/lib/ideas";
 import { JournalEntry, journalEntries } from "@/lib/journal-entries";
@@ -1106,10 +1107,12 @@ export default function AdminPage() {
                       </div>
 
                       <p className="mb-2 text-xs text-muted-foreground">
-                        Lists: put the heading on its own line, then a blank line, then each point on its own line
-                        starting with <code className="rounded bg-muted px-1">- </code> (dash and space). Use{" "}
-                        <span className="font-medium text-foreground">Insert agenda</span> for a ready-made block.
-                        Preview uses the same cleanup as the live site (line endings from Word/email are fixed).
+                        Lists: blank line after the heading, then each point on its own line starting with{" "}
+                        <code className="rounded bg-muted px-1">- </code>. A single <strong className="text-foreground">Enter</strong>{" "}
+                        now starts a new line in preview and on the site. Use <span className="font-medium text-foreground">Insert agenda</span>{" "}
+                        for a ready-made block. Pasted text like <code className="rounded bg-muted px-1">Topic- Next</code> is split into lines
+                        automatically when possible. Do not type the two characters <code className="rounded bg-muted px-1">\n</code>{" "}
+                        for a line break — press <strong className="text-foreground">Enter</strong>; if you already have them in old notes, they are converted to real line breaks when shown.
                       </p>
                       {noteViewMode === "write" ? (
                         <textarea
@@ -1136,7 +1139,7 @@ export default function AdminPage() {
                                 : "text-base"
                           } ${noteDensity === "relaxed" ? "leading-relaxed" : "leading-normal"} prose prose-zinc max-w-none dark:prose-invert prose-headings:scroll-mt-20`}
                         >
-                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
                             {note.trim() ? normalizeMarkdownSource(note) : "*Preview will appear here as you write your note.*"}
                           </ReactMarkdown>
                         </div>

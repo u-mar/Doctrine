@@ -2,6 +2,7 @@ import { useMDXComponents } from "@/mdx-components";
 import { MDXRemote } from "next-mdx-remote/rsc";
 
 import remarkGfm from "remark-gfm";
+import remarkBreaks from "remark-breaks";
 
 import rehypeSlug from "rehype-slug";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
@@ -21,7 +22,7 @@ export default function MDXRenderer({
       components={components}
       options={{
         mdxOptions: {
-          remarkPlugins: [remarkGfm],
+          remarkPlugins: [remarkGfm, remarkBreaks],
           rehypePlugins: [
             rehypeSlug,
             rehypeAutolinkHeadings,
