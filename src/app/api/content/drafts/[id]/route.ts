@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ensureContentSeeded } from "@/lib/content/seed";
+import { stripAuthoringEscapes } from "@/lib/markdown-normalize";
 import {
   clientDraftKindToPrisma,
   clientDraftStatusToPrisma,
@@ -69,7 +70,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
     if (body.kind !== undefined) data.kind = clientDraftKindToPrisma(body.kind as "idea" | "journal" | "quick-take");
     if (body.title !== undefined) data.title = body.title;
     if (body.topic !== undefined) data.topic = body.topic;
-    if (body.note !== undefined) data.note = body.note;
+    if (body.note !== undefined) data.note = stripAuthoringEscapes(body.note).trim();
     if (body.status !== undefined) {
       data.status = clientDraftStatusToPrisma(body.status as "draft" | "review" | "scheduled" | "published");
     }

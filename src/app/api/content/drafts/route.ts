@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ensureContentSeeded } from "@/lib/content/seed";
+import { stripAuthoringEscapes } from "@/lib/markdown-normalize";
 import {
   clientDraftKindToPrisma,
   clientDraftStatusToPrisma,
@@ -66,7 +67,7 @@ export async function POST(request: Request) {
         kind: clientDraftKindToPrisma(body.kind as "idea" | "journal" | "quick-take"),
         title: body.title.trim(),
         topic: body.topic.trim(),
-        note: body.note.trim(),
+        note: stripAuthoringEscapes(body.note).trim(),
         status: clientDraftStatusToPrisma(body.status as "draft" | "review" | "scheduled" | "published"),
         visibility: body.visibility,
         scheduledFor: scheduled,

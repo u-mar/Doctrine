@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { stripMarkdownForPreview } from "@/lib/utils";
+import { stripAuthoringEscapes } from "@/lib/markdown-normalize";
 
 function previewFromNote(note: string, maxLen: number): string {
   const plain = stripMarkdownForPreview(note);
@@ -69,6 +70,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Draft not found" }, { status: 404 });
     }
 
+    const note = stripAuthoringEscapes(draft.note);
+
     const baseSlug = generateSlug(draft.title);
     let slug = baseSlug;
     let counter = 1;
@@ -87,11 +90,11 @@ export async function POST(request: Request) {
         data: {
           slug,
           title: draft.title,
-          summary: previewFromNote(draft.note, 150),
-          readingTime: `${Math.max(1, Math.ceil(draft.note.split(/\s+/).length / 200))} min read`,
+          summary: previewFromNote(note, 150),
+          readingTime: `${Math.max(1, Math.ceil(note.split(/\s+/).length / 200))} min read`,
           dateLabel,
           topic: draft.topic,
-          content: draft.note,
+          content: note,
         },
       });
     } else if (draft.kind === "JOURNAL") {
@@ -105,14 +108,14 @@ export async function POST(request: Request) {
           title: draft.title,
           dateLabel,
           topic: draft.topic,
-          excerpt: previewFromNote(draft.note, 150),
-          content: draft.note,
+          excerpt: previewFromNote(note, 150),
+          content: note,
         },
       });
     } else if (draft.kind === "QUICK_TAKE") {
       await prisma.quickTakeEntry.create({
         data: {
-          content: draft.note,
+          content: note,
           dateLabel,
           topic: draft.topic,
         },

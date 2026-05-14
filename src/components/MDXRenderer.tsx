@@ -1,5 +1,5 @@
-import { useMDXComponents } from "@/mdx-components";
-import { MDXRemote } from "next-mdx-remote/rsc";
+import ReactMarkdown from "react-markdown";
+import type { Components } from "react-markdown";
 
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
@@ -7,7 +7,12 @@ import remarkBreaks from "remark-breaks";
 import rehypeSlug from "rehype-slug";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import { normalizeMarkdownSource } from "@/lib/markdown-normalize";
+import { useMDXComponents } from "@/mdx-components";
 
+/**
+ * Article bodies are plain Markdown from the admin textarea. `react-markdown` + GFM
+ * renders lists and line breaks reliably; MDX compilation was fragile for this use case.
+ */
 export default function MDXRenderer({
   source,
 }: {
@@ -17,18 +22,12 @@ export default function MDXRenderer({
   const normalizedSource = normalizeMarkdownSource(source);
 
   return (
-    <MDXRemote
-      source={normalizedSource}
-      components={components}
-      options={{
-        mdxOptions: {
-          remarkPlugins: [remarkGfm, remarkBreaks],
-          rehypePlugins: [
-            rehypeSlug,
-            rehypeAutolinkHeadings,
-          ],
-        },
-      }}
-    />
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm, remarkBreaks]}
+      rehypePlugins={[rehypeSlug, rehypeAutolinkHeadings]}
+      components={components as Components}
+    >
+      {normalizedSource}
+    </ReactMarkdown>
   );
 }

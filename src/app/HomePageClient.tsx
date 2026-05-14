@@ -39,7 +39,7 @@ export default function HomePageClient({
   homeNoticeBubble: HomeNoticeBubble;
 }) {
   return (
-    <div className="min-h-screen overflow-x-hidden bg-gradient-to-b from-canvas via-canvas to-muted/30 text-foreground">
+    <div className="min-h-screen touch-pan-y overflow-x-clip bg-gradient-to-b from-canvas via-canvas to-muted/30 text-foreground">
       {/* Full viewport width: hero atmosphere must not live inside .container or overflow-hidden clips it to the center column */}
       <div className="relative w-full pt-[calc(4rem+env(safe-area-inset-top,0px)+0.5rem)] sm:pt-[calc(4rem+env(safe-area-inset-top,0px)+0.75rem)]">
         <motion.section

@@ -6,6 +6,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 import { normalizeMarkdownSource } from "@/lib/markdown-normalize";
+import { CONTENT_PAGE_BREAK } from "@/lib/content/page-break";
 import { Idea, ideas } from "@/lib/ideas";
 import { JournalEntry, journalEntries } from "@/lib/journal-entries";
 import type { QuickTake } from "@/lib/quick-takes";
@@ -745,7 +746,8 @@ export default function AdminPage() {
               or <strong className="font-medium text-foreground">Private</strong> under Content.
             </p>
           </motion.div>
-          <nav className="flex flex-wrap gap-1.5" aria-label="Admin sections">
+          <nav className="flex flex-wrap items-center gap-3 sm:justify-end" aria-label="Admin sections">
+            <div className="flex flex-wrap gap-1.5">
             {sidebarTabs.map((tab) => {
               const active = activeTab === tab.key;
               return (
@@ -764,6 +766,17 @@ export default function AdminPage() {
                 </button>
               );
             })}
+            </div>
+            <button
+              type="button"
+              onClick={async () => {
+                await fetch("/api/admin/logout", { method: "POST" });
+                window.location.href = "/admin/login";
+              }}
+              className="rounded-full border border-border bg-background px-3.5 py-2 text-sm text-muted-foreground shadow-sm transition-colors hover:bg-muted hover:text-foreground"
+            >
+              Log out
+            </button>
           </nav>
         </div>
         {adminNoticeText ? (
@@ -1071,6 +1084,17 @@ export default function AdminPage() {
                           type="button"
                           onClick={() =>
                             applyNoteFormat("template", {
+                              template: CONTENT_PAGE_BREAK,
+                            })
+                          }
+                          className="rounded-md border border-border px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+                        >
+                          Insert page break
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            applyNoteFormat("template", {
                               template: "### Key points\n- Insight\n- Risk\n- Action",
                             })
                           }
@@ -1109,10 +1133,14 @@ export default function AdminPage() {
                       <p className="mb-2 text-xs text-muted-foreground">
                         Lists: blank line after the heading, then each point on its own line starting with{" "}
                         <code className="rounded bg-muted px-1">- </code>. A single <strong className="text-foreground">Enter</strong>{" "}
-                        now starts a new line in preview and on the site. Use <span className="font-medium text-foreground">Insert agenda</span>{" "}
-                        for a ready-made block. Pasted text like <code className="rounded bg-muted px-1">Topic- Next</code> is split into lines
-                        automatically when possible. Do not type the two characters <code className="rounded bg-muted px-1">\n</code>{" "}
-                        for a line break — press <strong className="text-foreground">Enter</strong>; if you already have them in old notes, they are converted to real line breaks when shown.
+                        starts a new line in preview and on the site. Use <span className="font-medium text-foreground">Insert agenda</span>{" "}
+                        for a ready-made block. A line with only <code className="rounded bg-muted px-1">---</code> or{" "}
+                        <code className="rounded bg-muted px-1">[[[BR]]]</code> adds paragraph space (it is not a reader page break; use{" "}
+                        <code className="rounded bg-muted px-1">[[[PAGE]]]</code> for that). Pasted text like{" "}
+                        <code className="rounded bg-muted px-1">Topic- Next</code> is split into lines automatically when possible. Do not type
+                        the two characters <code className="rounded bg-muted px-1">\n</code> for a line break — press{" "}
+                        <strong className="text-foreground">Enter</strong>; if you already have them in old notes, they are converted when
+                        shown.
                       </p>
                       {noteViewMode === "write" ? (
                         <textarea
@@ -1180,7 +1208,16 @@ export default function AdminPage() {
                 <p className="mt-1 text-sm text-muted-foreground">Ship clearer drafts with less rework.</p>
                 <ul className="mt-4 list-disc space-y-2 pl-4 text-sm text-muted-foreground">
                   <li>Open with the tension: what changed, who it affects, and why it matters now.</li>
-                  <li>Split MDX pages with a line that contains only three hyphens (---) when the narrative shifts.</li>
+                  <li>
+                    Start a new reader page with <code className="rounded bg-muted px-1">[[[PAGE]]]</code> on its own line
+                    (use <span className="font-medium text-foreground">Insert page break</span> in the toolbar). Older posts
+                    may still use a line of only <code className="rounded bg-muted px-1">---</code> surrounded by blank lines
+                    for the same thing.
+                  </li>
+                  <li>
+                    For an extra paragraph gap inside one page, put <code className="rounded bg-muted px-1">---</code> or{" "}
+                    <code className="rounded bg-muted px-1">[[[BR]]]</code> alone on a line (not for splitting pages).
+                  </li>
                   <li>Toggle Preview to catch headings and lists before going public.</li>
                   <li>Keep titles under ~80 characters; promote to Review when the thesis is stable.</li>
                 </ul>
@@ -1255,7 +1292,9 @@ export default function AdminPage() {
                               <span className="text-muted-foreground">{draft.createdAt}</span>
                             </div>
                             <p className="font-semibold">{draft.title}</p>
-                            <p className="mt-1 line-clamp-3 text-sm text-muted-foreground">{draft.note}</p>
+                            <p className="mt-1 line-clamp-3 whitespace-pre-line text-sm text-muted-foreground">
+                              {draft.note}
+                            </p>
                             <div className="mt-3 flex flex-wrap gap-2">
                               <button
                                 type="button"

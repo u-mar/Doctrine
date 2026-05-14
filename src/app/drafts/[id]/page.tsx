@@ -1,5 +1,6 @@
 import ContentDisplay from "@/components/ContentDisplay";
 import MDXRenderer from "@/components/MDXRenderer";
+import { splitContentPages } from "@/lib/content/page-break";
 import { ensureContentSeeded } from "@/lib/content/seed";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
@@ -16,7 +17,7 @@ async function getDraft(id: string) {
     title: row.title,
     date: row.createdAt.toLocaleString(),
     topic: row.topic,
-    pages: row.note.split("\n---\n"),
+    pages: splitContentPages(row.note),
   };
 }
 

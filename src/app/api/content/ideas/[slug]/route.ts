@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { splitContentPages } from "@/lib/content/page-break";
 import { ensureContentSeeded } from "@/lib/content/seed";
 
 export async function GET(_request: Request, context: { params: Promise<{ slug: string }> }) {
@@ -13,7 +14,7 @@ export async function GET(_request: Request, context: { params: Promise<{ slug: 
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    const pages = row.content.split("\n---\n");
+    const pages = splitContentPages(row.content);
 
     return NextResponse.json({
       slug: row.slug,
@@ -77,7 +78,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ slug:
       data,
     });
 
-    const updatedPages = updated.content.split("\n---\n");
+    const updatedPages = splitContentPages(updated.content);
 
     return NextResponse.json({
       slug: updated.slug,
