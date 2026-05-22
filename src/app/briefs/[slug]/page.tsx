@@ -5,6 +5,9 @@ import { ensureContentSeeded } from "@/lib/content/seed";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 
+/** Per-brief page must match DB after publish (avoids stale static HTML on Vercel). */
+export const dynamic = "force-dynamic";
+
 async function getBrief(slug: string) {
   await ensureContentSeeded();
   const row = await prisma.journalEntry.findFirst({
