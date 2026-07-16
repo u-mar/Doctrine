@@ -766,6 +766,13 @@ export default function AdminPage() {
                 </button>
               );
             })}
+            <a
+              href="/admin/mission-control"
+              title="Private personal development OS"
+              className="rounded-full bg-sky-600 px-3.5 py-2 text-sm font-medium text-white shadow-md transition-all hover:bg-sky-500"
+            >
+              Mission Control
+            </a>
             </div>
             <button
               type="button"
@@ -835,6 +842,12 @@ export default function AdminPage() {
                   >
                     Create Draft
                   </button>
+                  <a
+                    href="/admin/mission-control"
+                    className="rounded-lg bg-sky-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-sky-500"
+                  >
+                    Mission Control
+                  </a>
                   <button
                     type="button"
                     onClick={() => setActiveTab("content")}
