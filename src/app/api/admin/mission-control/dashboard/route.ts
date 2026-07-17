@@ -3,9 +3,12 @@ import { getMissionDashboard, markWorkedToday } from "@/lib/mission-control/dash
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const data = await getMissionDashboard();
+    const { searchParams } = new URL(request.url);
+    const from = searchParams.get("from") ?? undefined;
+    const to = searchParams.get("to") ?? undefined;
+    const data = await getMissionDashboard({ from, to });
     return NextResponse.json(data);
   } catch (error) {
     return NextResponse.json(
@@ -17,10 +20,14 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const body = (await request.json().catch(() => ({}))) as { action?: string };
+    const body = (await request.json().catch(() => ({}))) as {
+      action?: string;
+      from?: string;
+      to?: string;
+    };
     if (body.action === "checkin") {
       const meta = await markWorkedToday();
-      const data = await getMissionDashboard();
+      const data = await getMissionDashboard({ from: body.from, to: body.to });
       return NextResponse.json({ ...data, meta });
     }
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });

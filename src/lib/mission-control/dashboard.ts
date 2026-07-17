@@ -7,12 +7,21 @@ function startOfDay(d = new Date()) {
   return x;
 }
 
+function endOfDay(d = new Date()) {
+  const x = new Date(d);
+  x.setHours(23, 59, 59, 999);
+  return x;
+}
+
 function dateKey(d = new Date()) {
-  return d.toISOString().slice(0, 10);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 function monthKey(d = new Date()) {
-  return d.toISOString().slice(0, 7);
+  return dateKey(d).slice(0, 7);
 }
 
 function yearKey(d = new Date()) {
@@ -29,12 +38,27 @@ function dayOfYear(d = new Date()) {
   return Math.floor(diff / 86400000);
 }
 
+function parseDateInput(value: string) {
+  const [y, m, d] = value.split("-").map(Number);
+  if (!y || !m || !d) return null;
+  return startOfDay(new Date(y, m - 1, d));
+}
+
+function inRange(date: Date | null | undefined, from: Date, toEnd: Date) {
+  if (!date) return false;
+  const t = date.getTime();
+  return t >= from.getTime() && t <= toEnd.getTime();
+}
+
+function keyInRange(key: string, fromKey: string, toKey: string) {
+  return key >= fromKey && key <= toKey;
+}
+
 function computeStreak(workDates: string[]): number {
   if (!workDates.length) return 0;
   const set = new Set(workDates);
   let streak = 0;
   const cursor = startOfDay();
-  // Allow today or yesterday as anchor
   if (!set.has(dateKey(cursor))) {
     cursor.setDate(cursor.getDate() - 1);
     if (!set.has(dateKey(cursor))) return 0;
@@ -78,17 +102,41 @@ async function ensureDefaultHabits() {
   }
 }
 
-export async function getMissionDashboard() {
+export type DashboardQuery = {
+  from?: string;
+  to?: string;
+};
+
+function resolveRange(query?: DashboardQuery) {
+  const now = startOfDay();
+  const fromParsed = query?.from ? parseDateInput(query.from) : null;
+  const toParsed = query?.to ? parseDateInput(query.to) : null;
+
+  let from = fromParsed ?? new Date(now.getFullYear(), now.getMonth(), 1);
+  let to = toParsed ?? now;
+
+  if (from.getTime() > to.getTime()) {
+    const swap = from;
+    from = to;
+    to = swap;
+  }
+
+  const toEnd = endOfDay(to);
+  const fromKey = dateKey(from);
+  const toKey = dateKey(to);
+
+  return { from, to, toEnd, fromKey, toKey };
+}
+
+export async function getMissionDashboard(query?: DashboardQuery) {
   await ensureMeta();
   await ensureDefaultHabits();
 
   const now = new Date();
   const mk = monthKey(now);
   const yk = yearKey(now);
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const { from, to, toEnd, fromKey, toKey } = resolveRange(query);
   const yearStart = new Date(now.getFullYear(), 0, 1);
-  const weekStart = startOfDay();
-  weekStart.setDate(weekStart.getDate() - ((weekStart.getDay() + 6) % 7));
 
   const [
     meta,
@@ -119,27 +167,46 @@ export async function getMissionDashboard() {
     prisma.mcContact.findMany(),
     prisma.mcHabit.findMany({ where: { active: true } }),
     prisma.mcHabitLog.findMany({
-      where: { dateKey: { gte: new Date(Date.now() - 120 * 86400000).toISOString().slice(0, 10) } },
+      where: { dateKey: { gte: dateKey(new Date(Date.now() - 120 * 86400000)) } },
     }),
     prisma.mcJournal.findMany({ orderBy: { dateKey: "desc" }, take: 30 }),
   ]);
 
-  const booksThisMonth = reading.filter(
-    (r) => r.status === "completed" && r.completedAt && r.completedAt >= monthStart
+  const booksInRange = reading.filter(
+    (r) => r.status === "completed" && inRange(r.completedAt, from, toEnd)
   ).length;
   const booksThisYear = reading.filter(
     (r) => r.status === "completed" && r.completedAt && r.completedAt >= yearStart
   ).length;
 
-  const papersWritten = writing.filter((w) => w.type === "policy").length;
-  const briefsPublished = writing.filter((w) => w.type === "brief" && w.status === "published").length;
-  const videosRecorded = speaking.filter((s) => Boolean(s.videoUrl?.trim())).length;
-  const ministriesDone = ministries.filter((m) => m.status === "completed").length;
-  const countriesDone = countries.filter((c) => c.status === "completed").length;
-  const careerDone = await prisma.mcCareer.count({ where: { status: "completed" } });
-  const meetings = contacts.filter((c) => c.lastMeeting && c.lastMeeting >= monthStart).length;
-  const speakingSessions = speaking.length;
-  const speakingHours = speaking.reduce((sum, s) => sum + (s.durationMin || 0), 0) / 60;
+  const briefsInRange = writing.filter(
+    (w) => w.type === "brief" && w.status === "published" && inRange(w.publishedAt, from, toEnd)
+  ).length;
+  const papersInRange = writing.filter(
+    (w) => w.type === "policy" && inRange(w.updatedAt ?? w.createdAt, from, toEnd)
+  ).length;
+  const publishedInRange = writing.filter(
+    (w) => w.status === "published" && inRange(w.publishedAt, from, toEnd)
+  ).length;
+
+  const speakingInRange = speaking.filter((s) => inRange(s.practicedAt, from, toEnd));
+  const speakingSessions = speakingInRange.length;
+  const speakingHours = speakingInRange.reduce((sum, s) => sum + (s.durationMin || 0), 0) / 60;
+  const videosRecorded = speakingInRange.filter((s) => Boolean(s.videoUrl?.trim())).length;
+
+  const ministriesDone = ministries.filter(
+    (m) => m.status === "completed" && inRange(m.updatedAt ?? m.createdAt, from, toEnd)
+  ).length;
+  const countriesDone = countries.filter(
+    (c) => c.status === "completed" && inRange(c.updatedAt ?? c.createdAt, from, toEnd)
+  ).length;
+  const careerDone = await prisma.mcCareer.count({
+    where: {
+      status: "completed",
+      updatedAt: { gte: from, lte: toEnd },
+    },
+  });
+  const meetings = contacts.filter((c) => inRange(c.lastMeeting, from, toEnd)).length;
 
   const exerciseHabit = habits.find((h) => /exercise|workout/i.test(h.name));
   const exerciseLogs = exerciseHabit
@@ -171,11 +238,11 @@ export async function getMissionDashboard() {
 
   const workDates = meta?.workDates ?? [];
   const streak = computeStreak(workDates);
+  const workDaysInRange = workDates.filter((d) => keyInRange(d, fromKey, toKey)).length;
 
-  const wordsWritten = writing.reduce((s, w) => s + (w.wordCount || 0), 0);
-  const publishedThisMonth = writing.filter(
-    (w) => w.status === "published" && w.publishedAt && w.publishedAt >= monthStart
-  ).length;
+  const wordsWritten = writing
+    .filter((w) => inRange(w.updatedAt ?? w.createdAt, from, toEnd))
+    .reduce((s, w) => s + (w.wordCount || 0), 0);
 
   const habitStreaks = habits.map((h) => ({
     id: h.id,
@@ -189,7 +256,7 @@ export async function getMissionDashboard() {
       ((streak / 30) * 40 +
         (weeklyGoals.length ? (weeklyCompleted / weeklyGoals.length) * 30 : 15) +
         (day / dim) * 15 +
-        Math.min(booksThisMonth, 4) * 3.75) *
+        Math.min(booksInRange, 4) * 3.75) *
         1
     )
   );
@@ -211,11 +278,16 @@ export async function getMissionDashboard() {
     weeklyGoalsTotal: weeklyGoals.length,
     categoryProgress,
     upcomingTasks: tasks,
+    range: {
+      from: fromKey,
+      to: toKey,
+      workDays: workDaysInRange,
+    },
     widgets: {
-      booksThisMonth,
+      booksThisMonth: booksInRange,
       booksThisYear,
-      policyPapersWritten: papersWritten,
-      politicalBriefsPublished: briefsPublished,
+      policyPapersWritten: papersInRange,
+      politicalBriefsPublished: briefsInRange,
       videosRecorded,
       ministriesCompleted: ministriesDone,
       countriesCompleted: countriesDone,
@@ -226,7 +298,8 @@ export async function getMissionDashboard() {
       speakingHours: Math.round(speakingHours * 10) / 10,
       wordsWritten,
       writingTotal: writing.length,
-      publishedThisMonth,
+      publishedThisMonth: publishedInRange,
+      workDaysInRange,
     },
     habitStreaks,
     consistencyScore,
