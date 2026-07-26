@@ -1,5 +1,7 @@
 export type McSection =
   | "dashboard"
+  | "mentor"
+  | "reading-academy"
   | "goals"
   | "reading"
   | "writing"
@@ -21,6 +23,13 @@ export const MC_NAV_GROUPS: McNavGroup[] = [
   {
     label: "Overview",
     items: [{ key: "dashboard", label: "Dashboard", hint: "Command overview" }],
+  },
+  {
+    label: "AI Mentor",
+    items: [
+      { key: "mentor", label: "Mentor", hint: "Today's mission & knowledge map" },
+      { key: "reading-academy", label: "Reading Academy", hint: "AI-curated reading curriculum" },
+    ],
   },
   {
     label: "Planning",

@@ -18,6 +18,8 @@ import {
   ReviewsSection,
   VisionSection,
 } from "./_components/HabitsJournalVision";
+import { MentorSection } from "./_components/AiMentor";
+import { ReadingAcademySection } from "./_components/ReadingAcademy";
 
 export default function MissionControlPage() {
   const [section, setSection] = useState<McSection>("dashboard");
@@ -121,6 +123,8 @@ export default function MissionControlPage() {
 
           <main className="flex-1 px-4 py-8 lg:px-8">
             {section === "dashboard" && <DashboardSection />}
+            {section === "mentor" && <MentorSection />}
+            {section === "reading-academy" && <ReadingAcademySection />}
             {section === "goals" && <GoalsSection />}
             {section === "tasks" && <TasksSection />}
             {section === "reading" && <ReadingSection />}
