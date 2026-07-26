@@ -214,6 +214,8 @@ model McReading {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   title       String
   author      String   @default("")
+  /// Publisher/organization for policy papers (World Bank, IMF, OECD, ...). Unused for books.
+  publisher   String   @default("")
   category    String   @default("book")
   pages       Int      @default(0)
   progress    Int      @default(0)

@@ -8,6 +8,8 @@ type Book = {
   id: string;
   title: string;
   author: string;
+  publisher: string;
+  category: string;
   topic: string;
   level: string;
   year: number | null;
@@ -26,6 +28,10 @@ type TopicSummary = {
   topic: string;
   total: number;
   counts: Record<string, number>;
+  books: number;
+  booksCompleted: number;
+  policyPapers: number;
+  policyPapersCompleted: number;
   completed: number;
   hasCurriculum: boolean;
 };
@@ -93,7 +99,9 @@ function TopicGrid({ onOpen }: { onOpen: (topic: string) => void }) {
           >
             <p className="font-medium text-slate-800">{s.topic}</p>
             <p className="mt-1 text-xs text-slate-400">
-              {s.hasCurriculum ? `${s.completed}/${s.total} completed` : "Not generated yet"}
+              {s.hasCurriculum
+                ? `${s.booksCompleted}/${s.books} books · ${s.policyPapersCompleted}/${s.policyPapers} papers`
+                : "Not generated yet"}
             </p>
             <div className="mt-3">
               <ProgressBar value={pct} tone={i} />
@@ -105,8 +113,9 @@ function TopicGrid({ onOpen }: { onOpen: (topic: string) => void }) {
   );
 }
 
-function BookCard({ book, onOpen }: { book: Book; onOpen: () => void }) {
-  const done = book.status === "completed";
+function ContentCard({ item, onOpen }: { item: Book; onOpen: () => void }) {
+  const done = item.status === "completed";
+  const isPaper = item.category === "policy_paper";
   return (
     <button
       type="button"
@@ -115,10 +124,10 @@ function BookCard({ book, onOpen }: { book: Book; onOpen: () => void }) {
         done ? "border-emerald-200 bg-emerald-50/50" : "border-slate-200 bg-white"
       }`}
     >
-      <p className="text-sm font-medium text-slate-800">{book.title}</p>
+      <p className="text-sm font-medium text-slate-800">{item.title}</p>
       <p className="mt-0.5 text-xs text-slate-400">
-        {book.author}
-        {book.year ? ` · ${book.year}` : ""}
+        {isPaper ? item.publisher : item.author}
+        {item.year ? ` · ${item.year}` : ""}
       </p>
       {done ? (
         <span className="mt-2 inline-block rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-emerald-700">
@@ -126,7 +135,7 @@ function BookCard({ book, onOpen }: { book: Book; onOpen: () => void }) {
         </span>
       ) : (
         <span className="mt-2 inline-block rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-slate-500">
-          {book.status === "reading" ? "Reading" : "To read"}
+          {item.status === "reading" ? "Reading" : "To read"}
         </span>
       )}
     </button>
@@ -134,7 +143,7 @@ function BookCard({ book, onOpen }: { book: Book; onOpen: () => void }) {
 }
 
 function TopicView({ topic, onBack }: { topic: string; onBack: () => void }) {
-  const [books, setBooks] = useState<Book[] | null>(null);
+  const [items, setItems] = useState<Book[] | null>(null);
   const [error, setError] = useState<ApiFailure | null>(null);
   const [generating, setGenerating] = useState(false);
   const [selected, setSelected] = useState<Book | null>(null);
@@ -150,14 +159,14 @@ function TopicView({ topic, onBack }: { topic: string; onBack: () => void }) {
     );
     if (err) {
       setError(err);
-      setBooks([]);
+      setItems([]);
     } else {
-      setBooks(data ?? []);
+      setItems(data ?? []);
     }
   };
 
   useEffect(() => {
-    setBooks(null);
+    setItems(null);
     setRecommendation(null);
     void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -171,14 +180,14 @@ function TopicView({ topic, onBack }: { topic: string; onBack: () => void }) {
       body: JSON.stringify({ topic, regenerate: true }),
     });
     if (err) setError(err);
-    else setBooks(data ?? []);
+    else setItems(data ?? []);
     setGenerating(false);
   };
 
-  const complete = async (book: Book) => {
+  const complete = async (item: Book) => {
     setCompleting(true);
     const { data } = await fetchJson<{ message: string; nextBookTitle: string | null }>(
-      `/api/admin/mission-control/reading-academy/books/${book.id}/complete`,
+      `/api/admin/mission-control/reading-academy/books/${item.id}/complete`,
       { method: "POST" }
     );
     if (data) {
@@ -189,15 +198,20 @@ function TopicView({ topic, onBack }: { topic: string; onBack: () => void }) {
     setCompleting(false);
   };
 
+  const books = useMemo(() => (items ?? []).filter((i) => i.category === "book"), [items]);
+  const papers = useMemo(() => (items ?? []).filter((i) => i.category === "policy_paper"), [items]);
+
   const byLevel = useMemo(() => {
     const map = new Map<string, Book[]>();
     for (const level of BOOK_LEVELS) map.set(level, []);
-    for (const b of books ?? []) {
+    for (const b of books) {
       if (!map.has(b.level)) map.set(b.level, []);
       map.get(b.level)!.push(b);
     }
     return map;
   }, [books]);
+
+  const isPaper = selected?.category === "policy_paper";
 
   return (
     <div>
@@ -207,7 +221,7 @@ function TopicView({ topic, onBack }: { topic: string; onBack: () => void }) {
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <h3 className="text-xl font-semibold text-slate-900">{topic}</h3>
         <button type="button" className={btnGhost} onClick={() => void regenerate()} disabled={generating}>
-          {generating ? "Generating…" : books && books.length > 0 ? "Regenerate curriculum" : "Generate curriculum"}
+          {generating ? "Generating…" : items && items.length > 0 ? "Regenerate content" : "Generate content"}
         </button>
       </div>
 
@@ -221,37 +235,59 @@ function TopicView({ topic, onBack }: { topic: string; onBack: () => void }) {
         </div>
       ) : null}
 
-      {books === null ? (
+      {items === null ? (
         <p className="text-sm text-slate-400">Loading curriculum…</p>
       ) : error ? (
         error.status === 412 ? (
-          <NeedsApiKey action="Generating this curriculum" />
+          <NeedsApiKey action="Generating this topic's reading list" />
         ) : (
           <p className="text-sm text-red-600">{error.message}</p>
         )
-      ) : books.length === 0 ? (
+      ) : items.length === 0 ? (
         <EmptyState
-          title="No curriculum yet"
-          body="Click Generate curriculum to have your mentor build a reading path for this topic."
+          title="Nothing prepared yet"
+          body="Click Generate content to have your mentor build a reading and policy-paper list for this topic."
         />
       ) : (
-        <div className="space-y-6">
-          {BOOK_LEVELS.map((level) => {
-            const levelBooks = byLevel.get(level) ?? [];
-            if (levelBooks.length === 0) return null;
-            return (
-              <div key={level}>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
-                  {LEVEL_LABEL[level]}
-                </p>
-                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                  {levelBooks.map((book) => (
-                    <BookCard key={book.id} book={book} onOpen={() => setSelected(book)} />
-                  ))}
-                </div>
+        <div className="space-y-8">
+          <div>
+            <p className="mb-3 text-sm font-semibold text-slate-700">Books</p>
+            {books.length === 0 ? (
+              <p className="text-sm text-slate-400">No books yet.</p>
+            ) : (
+              <div className="space-y-6">
+                {BOOK_LEVELS.map((level) => {
+                  const levelBooks = byLevel.get(level) ?? [];
+                  if (levelBooks.length === 0) return null;
+                  return (
+                    <div key={level}>
+                      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                        {LEVEL_LABEL[level]}
+                      </p>
+                      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                        {levelBooks.map((book) => (
+                          <ContentCard key={book.id} item={book} onOpen={() => setSelected(book)} />
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            );
-          })}
+            )}
+          </div>
+
+          <div>
+            <p className="mb-3 text-sm font-semibold text-slate-700">Policy Papers</p>
+            {papers.length === 0 ? (
+              <p className="text-sm text-slate-400">No policy papers yet.</p>
+            ) : (
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {papers.map((paper) => (
+                  <ContentCard key={paper.id} item={paper} onOpen={() => setSelected(paper)} />
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -259,30 +295,36 @@ function TopicView({ topic, onBack }: { topic: string; onBack: () => void }) {
         {selected ? (
           <div className="space-y-4 text-sm">
             <p className="text-slate-500">
-              {selected.author}
+              {isPaper ? selected.publisher : selected.author}
               {selected.year ? ` · ${selected.year}` : ""}
               {selected.pages ? ` · ${selected.pages}p` : ""}
               {selected.estimatedHours ? ` · ~${selected.estimatedHours}h` : ""}
               {" · "}
-              <span className="font-medium text-slate-700">{LEVEL_LABEL[selected.level] ?? selected.level}</span>
+              <span className="font-medium text-slate-700">
+                {isPaper ? "Policy Paper" : LEVEL_LABEL[selected.level] ?? selected.level}
+              </span>
             </p>
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Description</p>
               <p className="mt-1 whitespace-pre-wrap text-slate-700">{selected.description}</p>
             </div>
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Why this book matters</p>
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Why this matters</p>
               <p className="mt-1 whitespace-pre-wrap text-slate-700">{selected.whyItMatters}</p>
             </div>
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Key lessons</p>
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                {isPaper ? "Key findings" : "Key lessons"}
+              </p>
               <p className="mt-1 whitespace-pre-wrap text-slate-700">{selected.keyLessons}</p>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Prerequisites</p>
-                <p className="mt-1 whitespace-pre-wrap text-slate-700">{selected.prerequisites || "None"}</p>
-              </div>
+              {!isPaper ? (
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Prerequisites</p>
+                  <p className="mt-1 whitespace-pre-wrap text-slate-700">{selected.prerequisites || "None"}</p>
+                </div>
+              ) : null}
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Read next</p>
                 <p className="mt-1 whitespace-pre-wrap text-slate-700">{selected.readNext || "—"}</p>
@@ -290,7 +332,9 @@ function TopicView({ topic, onBack }: { topic: string; onBack: () => void }) {
             </div>
             {selected.relatedBooks.length > 0 ? (
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Related books</p>
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                  {isPaper ? "Related papers" : "Related books"}
+                </p>
                 <ul className="mt-1 list-disc space-y-0.5 pl-4 text-slate-700">
                   {selected.relatedBooks.map((r) => (
                     <li key={r}>{r}</li>
@@ -322,7 +366,7 @@ export function ReadingAcademySection() {
     <div>
       <SectionHeader
         title="Reading Academy"
-        subtitle="An AI-curated curriculum across governance, economics, leadership, and more — no manual book hunting."
+        subtitle="An AI-curated curriculum of books and policy papers across governance, economics, leadership, and more — no manual hunting."
       />
       {topic ? <TopicView topic={topic} onBack={() => setTopic(null)} /> : <TopicGrid onOpen={setTopic} />}
     </div>

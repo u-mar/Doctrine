@@ -6,23 +6,31 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const books = await prisma.mcReading.findMany({
+    const rows = await prisma.mcReading.findMany({
       where: { topic: { in: [...READING_TOPICS] } },
-      select: { topic: true, level: true, status: true },
+      select: { topic: true, level: true, category: true, status: true },
     });
 
     const result = READING_TOPICS.map((topic) => {
-      const topicBooks = books.filter((b) => b.topic === topic);
+      const topicRows = rows.filter((b) => b.topic === topic);
+      const books = topicRows.filter((b) => b.category === "book");
+      const papers = topicRows.filter((b) => b.category === "policy_paper");
+
       const counts: Record<string, number> = {};
       for (const level of BOOK_LEVELS) {
-        counts[level] = topicBooks.filter((b) => b.level === level).length;
+        counts[level] = books.filter((b) => b.level === level).length;
       }
+
       return {
         topic,
-        total: topicBooks.length,
+        total: topicRows.length,
         counts,
-        completed: topicBooks.filter((b) => b.status === "completed").length,
-        hasCurriculum: topicBooks.length > 0,
+        books: books.length,
+        booksCompleted: books.filter((b) => b.status === "completed").length,
+        policyPapers: papers.length,
+        policyPapersCompleted: papers.filter((b) => b.status === "completed").length,
+        completed: topicRows.filter((b) => b.status === "completed").length,
+        hasCurriculum: topicRows.length > 0,
       };
     });
 
