@@ -85,6 +85,7 @@ export default function AdminPage() {
   const [contentFeedback, setContentFeedback] = useState("");
   const [draftFeedback, setDraftFeedback] = useState("");
   const [contentFilter, setContentFilter] = useState<ContentFilter>("all");
+  const [contentSearch, setContentSearch] = useState("");
   const [selectedIdea, setSelectedIdea] = useState<{ slug: string; mode: ContentActionMode } | null>(null);
   const [selectedJournal, setSelectedJournal] = useState<{ slug: string; mode: ContentActionMode } | null>(null);
   const [noteViewMode, setNoteViewMode] = useState<NoteViewMode>("write");
@@ -717,12 +718,14 @@ export default function AdminPage() {
       })),
     ];
 
-    if (contentFilter === "all") {
-      return items;
-    }
+    const byType = contentFilter === "all" ? items : items.filter((item) => item.type === contentFilter);
 
-    return items.filter((item) => item.type === contentFilter);
-  }, [ideaRows, journalRows, contentFilter]);
+    const term = contentSearch.trim().toLowerCase();
+    if (!term) {
+      return byType;
+    }
+    return byType.filter((item) => item.title.toLowerCase().includes(term) || item.slug.toLowerCase().includes(term));
+  }, [ideaRows, journalRows, contentFilter, contentSearch]);
 
   const currentTab = sidebarTabs.find((tab) => tab.key === activeTab);
   const adminNoticeText = contentFeedback || draftFeedback;
@@ -1424,7 +1427,14 @@ export default function AdminPage() {
             <section className="rounded-2xl border border-border bg-card/85 p-5 shadow-sm">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <h3 className="text-lg font-semibold">Content Titles</h3>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <input
+                    type="search"
+                    value={contentSearch}
+                    onChange={(event) => setContentSearch(event.target.value)}
+                    placeholder="Search by title or slug…"
+                    className="w-48 rounded-full border border-border bg-background px-3.5 py-1.5 text-xs shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
                   <button
                     type="button"
                     onClick={() => setContentFilter("all")}

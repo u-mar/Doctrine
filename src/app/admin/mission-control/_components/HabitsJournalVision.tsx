@@ -26,12 +26,53 @@ const visionSerif = Newsreader({
 type Habit = { id: string; name: string; category: string; active: boolean };
 type HabitLog = { id: string; habitId: string; dateKey: string; done: boolean };
 
+function pad2(n: number) {
+  return String(n).padStart(2, "0");
+}
+
+function toDateKey(d: Date) {
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+}
+
+function lastNDays(n: number) {
+  const days: { key: string; label: string; isToday: boolean }[] = [];
+  const now = new Date();
+  for (let i = n - 1; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+    days.push({
+      key: toDateKey(d),
+      label: d.toLocaleDateString(undefined, { weekday: "short" }).slice(0, 2),
+      isToday: i === 0,
+    });
+  }
+  return days;
+}
+
+function computeStreak(doneKeys: Set<string>, today: string) {
+  let streak = 0;
+  const cursor = new Date();
+  const todayDone = doneKeys.has(today);
+  if (!todayDone) {
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  for (;;) {
+    const key = toDateKey(cursor);
+    if (!doneKeys.has(key)) break;
+    streak += 1;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return streak;
+}
+
 export function HabitsSection() {
-  const { items: habits, create, reload } = useCollection<Habit>("habits");
+  const { items: habits, create, remove } = useCollection<Habit>("habits");
   const [logs, setLogs] = useState<HabitLog[]>([]);
   const [name, setName] = useState("");
+  const [category, setCategory] = useState("");
   const [open, setOpen] = useState(false);
-  const today = new Date().toISOString().slice(0, 10);
+  const [showInactive, setShowInactive] = useState(false);
+  const week = useMemo(() => lastNDays(7), []);
+  const today = week[week.length - 1].key;
 
   const loadLogs = async () => {
     const rows = await mcFetch<HabitLog[]>("/api/admin/mission-control/habit-logs");
@@ -42,9 +83,33 @@ export function HabitsSection() {
     void loadLogs();
   }, []);
 
-  const doneToday = useMemo(() => {
-    return new Set(logs.filter((l) => l.dateKey === today && l.done).map((l) => l.habitId));
-  }, [logs, today]);
+  const logsByHabit = useMemo(() => {
+    const map = new Map<string, Set<string>>();
+    for (const l of logs) {
+      if (!l.done) continue;
+      if (!map.has(l.habitId)) map.set(l.habitId, new Set());
+      map.get(l.habitId)!.add(l.dateKey);
+    }
+    return map;
+  }, [logs]);
+
+  const visibleHabits = useMemo(
+    () => habits.filter((h) => showInactive || h.active !== false),
+    [habits, showInactive]
+  );
+
+  const toggleDay = async (habitId: string, dateKey: string, currentlyDone: boolean) => {
+    await mcFetch("/api/admin/mission-control/habit-logs", {
+      method: "POST",
+      body: JSON.stringify({ habitId, dateKey, done: !currentlyDone }),
+    });
+    await loadLogs();
+  };
+
+  const removeHabit = async (h: Habit) => {
+    if (!window.confirm(`Remove "${h.name}"? This deletes the habit (its history stays logged but hidden).`)) return;
+    await remove(h.id);
+  };
 
   return (
     <div>
@@ -52,9 +117,20 @@ export function HabitsSection() {
         title="Habit Tracker"
         subtitle="Daily discipline compounds into leadership."
         action={
-          <button type="button" className={btnPrimary} onClick={() => setOpen(true)}>
-            Add habit
-          </button>
+          <div className="flex items-center gap-2">
+            <label className="flex items-center gap-1.5 text-xs text-slate-500">
+              <input
+                type="checkbox"
+                checked={showInactive}
+                onChange={(e) => setShowInactive(e.target.checked)}
+                className="h-3.5 w-3.5 rounded border-slate-300 text-[#3B8FD9] focus:ring-[#3B8FD9]/30"
+              />
+              Show inactive
+            </label>
+            <button type="button" className={btnPrimary} onClick={() => setOpen(true)}>
+              Add habit
+            </button>
+          </div>
         }
       />
 
@@ -64,13 +140,22 @@ export function HabitsSection() {
           onSubmit={async (e) => {
             e.preventDefault();
             if (!name.trim()) return;
-            await create({ name, category: "daily", active: true });
+            await create({ name: name.trim(), category: category.trim() || "daily", active: true });
             setName("");
+            setCategory("");
             setOpen(false);
           }}
         >
           <Field label="Habit name">
             <input className={inputClass} value={name} onChange={(e) => setName(e.target.value)} required autoFocus />
+          </Field>
+          <Field label="Category (optional)">
+            <input
+              className={inputClass}
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              placeholder="daily, faith, fitness…"
+            />
           </Field>
           <div className="flex justify-end gap-2">
             <button type="button" className={btnGhost} onClick={() => setOpen(false)}>
@@ -83,36 +168,86 @@ export function HabitsSection() {
         </form>
       </Modal>
 
-      {habits.length === 0 ? (
+      {visibleHabits.length === 0 ? (
         <EmptyState title="No habits" body="Defaults load on first dashboard visit — or add your own." />
       ) : (
-        <ul className="space-y-2">
-          {habits.map((h) => {
-            const on = doneToday.has(h.id);
-            return (
-              <li
-                key={h.id}
-                className="flex items-center justify-between rounded-xl border border-sky-100 bg-gradient-to-r from-white to-sky-50/40 px-4 py-3 shadow-sm"
+        <div className="space-y-2.5">
+          <div className="hidden items-center gap-1 pl-4 pr-3 sm:flex">
+            <span className="flex-1" />
+            {week.map((d) => (
+              <span
+                key={d.key}
+                className={`w-8 text-center text-[10px] font-semibold uppercase tracking-wide ${
+                  d.isToday ? "text-[#1d6aa8]" : "text-slate-400"
+                }`}
               >
-                <span className="text-sm text-slate-800">{h.name}</span>
-                <button
-                  type="button"
-                  className={on ? btnPrimary : btnGhost}
-                  onClick={async () => {
-                    await mcFetch("/api/admin/mission-control/habit-logs", {
-                      method: "POST",
-                      body: JSON.stringify({ habitId: h.id, dateKey: today, done: !on }),
-                    });
-                    await loadLogs();
-                    await reload();
-                  }}
+                {d.label}
+              </span>
+            ))}
+            <span className="w-14 text-center text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+              Streak
+            </span>
+            <span className="w-8" />
+          </div>
+          <ul className="space-y-2">
+            {visibleHabits.map((h) => {
+              const doneKeys = logsByHabit.get(h.id) ?? new Set<string>();
+              const streak = computeStreak(doneKeys, today);
+              const inactive = h.active === false;
+              return (
+                <li
+                  key={h.id}
+                  className={`flex flex-wrap items-center gap-3 rounded-xl border px-4 py-3 shadow-sm sm:flex-nowrap ${
+                    inactive
+                      ? "border-slate-200 bg-slate-50/70 opacity-60"
+                      : "border-sky-100 bg-gradient-to-r from-white to-sky-50/40"
+                  }`}
                 >
-                  {on ? "Done today" : "Mark done"}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-slate-800">{h.name}</p>
+                    {h.category ? (
+                      <p className="text-[11px] uppercase tracking-wide text-slate-400">{h.category}</p>
+                    ) : null}
+                  </div>
+                  <div className="flex gap-1">
+                    {week.map((d) => {
+                      const on = doneKeys.has(d.key);
+                      return (
+                        <button
+                          key={d.key}
+                          type="button"
+                          title={`${d.key}${on ? " · done" : ""}`}
+                          onClick={() => void toggleDay(h.id, d.key, on)}
+                          className={`flex h-8 w-8 items-center justify-center rounded-lg text-xs font-medium transition ${
+                            on
+                              ? "bg-gradient-to-b from-[#4B9CD3] to-[#3B8FD9] text-white shadow-sm"
+                              : "border border-slate-200 bg-white text-slate-300 hover:border-sky-200 hover:text-sky-400"
+                          } ${d.isToday ? "ring-2 ring-[#3B8FD9]/30" : ""}`}
+                        >
+                          {on ? "✓" : ""}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="w-14 text-center">
+                    <span className={`text-sm font-semibold ${streak > 0 ? "text-[#1d6aa8]" : "text-slate-300"}`}>
+                      {streak}
+                    </span>
+                    <span className="ml-0.5 text-[10px] text-slate-400">d</span>
+                  </div>
+                  <button
+                    type="button"
+                    title="Remove habit"
+                    onClick={() => void removeHabit(h)}
+                    className="rounded-lg px-2 py-1.5 text-xs text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"
+                  >
+                    Remove
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       )}
     </div>
   );
